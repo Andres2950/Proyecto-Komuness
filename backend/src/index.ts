@@ -61,15 +61,12 @@ const ACERCADE_DIR = process.env.ACERCADE_LIB || path.join(UPLOADS_ROOT, 'acerca
 const PROFILE_DIR = process.env.PROFILE_LIB || path.join(UPLOADS_ROOT, 'perfil');
 const CSV_DIR = process.env.CSV_LIB || path.join(UPLOADS_ROOT, 'csv');
 
-// Compat con URLs guardadas en BD (antes dependían de Nginx)
-app.use('/acercade', express.static(ACERCADE_DIR));
-app.use('/perfil', express.static(PROFILE_DIR));
-app.use('/csv', express.static(CSV_DIR));
+app.use("/uploads", express.static(UPLOAD_ROOT));
+app.use("/biblioteca", express.static(process.env.LIBRARY_DIR || (UPLOAD_ROOT + "/biblioteca")));
+app.use("/acercade", express.static(process.env.ACERCADE_LIB || (UPLOAD_ROOT + "/acercade")));
+app.use("/perfil", express.static(process.env.PROFILE_LIB || (UPLOAD_ROOT + "/perfil")));
+app.use("/csv", express.static(process.env.CSV_LIB || (UPLOAD_ROOT + "/csv")));
 
-// (Opcional) si en algún punto generás URLs /uploads/...
-app.use('/uploads', express.static(UPLOADS_ROOT));
-// (Opcional) si querés exponer biblioteca como estático (ya existe /api/biblioteca/files/:id)
-app.use('/biblioteca', express.static(LIBRARY_DIR));
 
 /** ====== Rutas API ====== */
 app.use('/api/configuracion', configuracionRoutes);
