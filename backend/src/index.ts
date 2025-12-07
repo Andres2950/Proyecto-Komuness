@@ -61,11 +61,11 @@ const ACERCADE_DIR = process.env.ACERCADE_LIB || path.join(UPLOADS_ROOT, 'acerca
 const PROFILE_DIR = process.env.PROFILE_LIB || path.join(UPLOADS_ROOT, 'perfil');
 const CSV_DIR = process.env.CSV_LIB || path.join(UPLOADS_ROOT, 'csv');
 
-app.use("/uploads", express.static(UPLOAD_ROOT));
-app.use("/biblioteca", express.static(process.env.LIBRARY_DIR || (UPLOAD_ROOT + "/biblioteca")));
-app.use("/acercade", express.static(process.env.ACERCADE_LIB || (UPLOAD_ROOT + "/acercade")));
-app.use("/perfil", express.static(process.env.PROFILE_LIB || (UPLOAD_ROOT + "/perfil")));
-app.use("/csv", express.static(process.env.CSV_LIB || (UPLOAD_ROOT + "/csv")));
+app.use("/uploads", express.static(UPLOADS_ROOT));
+app.use("/biblioteca", express.static(process.env.LIBRARY_DIR || (UPLOADS_ROOT + "/biblioteca")));
+app.use("/acercade", express.static(process.env.ACERCADE_LIB || (UPLOADS_ROOT + "/acercade")));
+app.use("/perfil", express.static(process.env.PROFILE_LIB || (UPLOADS_ROOT + "/perfil")));
+app.use("/csv", express.static(process.env.CSV_LIB || (UPLOADS_ROOT + "/csv")));
 
 
 /** ====== Rutas API ====== */
