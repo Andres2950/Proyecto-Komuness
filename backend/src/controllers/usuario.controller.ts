@@ -41,8 +41,19 @@ export const getUsuarios = async (req: Request, res: Response): Promise<void> =>
     }
 
     try {
+        // INCLUIR plan en la selección
         const usuarios = await modelUsuario.find(query).select('-password');
-        res.status(200).json(usuarios);
+        
+        // Transformar la respuesta para incluir plan explícitamente
+        const usuariosConPlan = usuarios.map(usuario => ({
+            ...usuario.toObject(),
+            plan: usuario.plan || null // Asegurar que siempre haya un campo plan
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: usuariosConPlan
+        });
     } catch (error) {
         const err = error as Error;
         console.log(`Error en ${getUsuarios.name}: ${err.message}`);
@@ -54,11 +65,30 @@ export const getUsuarios = async (req: Request, res: Response): Promise<void> =>
 export const getUsuarioById = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = req.params.id;
-        const usuario = await modelUsuario.findById(id);
-        res.status(200).json(usuario);
+        // INCLUIR plan en la consulta
+        const usuario = await modelUsuario.findById(id).select('-password');
+        
+        if (!usuario) {
+            res.status(404).json({ 
+                success: false, 
+                message: 'Usuario no encontrado' 
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                ...usuario.toObject(),
+                plan: usuario.plan || null
+            }
+        });
     } catch (error) {
         const err = error as Error;
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ 
+            success: false, 
+            message: err.message 
+        });
     }
 };
 
@@ -102,20 +132,20 @@ export const deleteUsuario = async (req: Request, res: Response): Promise<void> 
 export const loginUsuario = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password } = req.body;
-        //buscamos el usuario en la base de datos
+         //buscamos el usuario en la base de datos
         let usuario: any = await modelUsuario.findOne({ email });
         if (!usuario) {
             res.status(401).json({ message: 'Usuario no encontrado' });
             return;
         }
-        //comparamos la contraseña
+        //comparamos la contraseña   
         const isPasswordValid = await comparePassword(password, usuario.password);
         if (!isPasswordValid) {
             res.status(401).json({ message: 'Contraseña incorrecta' });
             return;
         }
 
-        // ✅ PASO 3 (A): si el usuario tiene premium vencido, lo bajamos antes de generar token/retornar user
+         // ✅ PASO 3 (A): si el usuario tiene premium vencido, lo bajamos antes de generar token/retornar user
         const ahora = new Date();
         const fecha = usuario.fechaVencimientoPremium ? new Date(usuario.fechaVencimientoPremium) : null;
         const fechaValida = !!fecha && !isNaN(fecha.getTime());
@@ -132,7 +162,16 @@ export const loginUsuario = async (req: Request, res: Response): Promise<void> =
 
         //si es exitoso, generamos un token y lo devolvemos en la cookie
         const token = generarToken(usuario);
-        res.status(200).json({ token, message: 'Login exitoso', user: usuario });
+        
+        //  Incluir plan en la respuesta
+        res.status(200).json({ 
+            token, 
+            message: 'Login exitoso', 
+            user: {
+                ...usuario.toObject(),
+                plan: usuario.plan || null
+            }
+        });
     } catch (error) {
         const err = error as Error;
         console.log(err);
@@ -183,41 +222,71 @@ export const registerUsuario = async (req: Request, res: Response): Promise<void
  */
 export const checkAuth = async (req: Request, res: Response): Promise<void> => {
     try {
-        // ✅ Si la ruta pasó por authMiddleware, ya viene el usuario real (con downgrade aplicado)
+        // Si la ruta pasó por authMiddleware, ya viene el usuario real (con downgrade aplicado)
         const authReq = req as any;
         if (authReq.user) {
-            res.status(200).json({ message: 'Autorizado', user: authReq.user });
+            // Asegurar que el usuario tenga el campo plan y no incluya password
+            const userWithPlan = {
+                ...authReq.user.toObject ? authReq.user.toObject() : authReq.user,
+                plan: authReq.user.plan || null
+            };
+            
+            // Eliminar password si existe
+            if (userWithPlan.password) {
+                delete userWithPlan.password;
+            }
+            
+            res.status(200).json({ 
+                success: true,
+                message: 'Autorizado', 
+                user: userWithPlan 
+            });
             return;
         }
 
         // Fallback: si por alguna razón llaman checkAuth sin middleware, hacemos la validación aquí
         const header = req.headers.authorization;
         if (!header || !header.startsWith('Bearer ')) {
-            res.status(401).json({ message: 'No provee Bearer header' });
+            res.status(401).json({ 
+                success: false,
+                message: 'No provee Bearer header' 
+            });
             return;
         }
+        
         const token = header.split(' ')[1];
         if (!token) {
-            res.status(401).json({ message: 'No provee token' });
+            res.status(401).json({ 
+                success: false,
+                message: 'No provee token' });
             return;
-        }
+        }   
         //verificamos el token
         const status = await verificarToken(token);
         if (!status.usuario) {
             if (status.error === "Token expirado") {
-                res.status(401).json({ message: 'Token expirado' });
+                res.status(401).json({ 
+                    success: false,
+                    message: 'Token expirado' 
+                });
                 return;
             }
             if (status.error === "Token invalido") {
-                res.status(403).json({ message: 'Token invalido' });
+                res.status(403).json({ 
+                    success: false,
+                    message: 'Token invalido' 
+                });
                 return;
 
             }
-            res.status(401).json({ message: 'No autorizado' });
+            res.status(401).json({ 
+                success: false,
+                message: 'No autorizado' 
+            });
             return;
         }
 
-        // ✅ PASO 3 (A) también aquí: usar BD y aplicar downgrade si venció
+        //  PASO 3 (A): usar BD y aplicar downgrade si venció
         const tokenUser: any = status.usuario;
         const loggedUserId =
             tokenUser?._id?.toString?.() ||
@@ -226,13 +295,20 @@ export const checkAuth = async (req: Request, res: Response): Promise<void> => {
             tokenUser?.userId;
 
         if (!loggedUserId) {
-            res.status(401).json({ message: 'No autorizado (sin id de usuario)' });
+            res.status(401).json({ 
+                success: false,
+                message: 'No autorizado (sin id de usuario)' 
+            });
             return;
         }
 
-        const usuarioDb: any = await modelUsuario.findById(loggedUserId);
+        //  No traer password y asegurar campo plan
+        const usuarioDb: any = await modelUsuario.findById(loggedUserId).select('-password');
         if (!usuarioDb) {
-            res.status(401).json({ message: 'No autorizado (usuario no existe)' });
+            res.status(401).json({ 
+                success: false,
+                message: 'No autorizado (usuario no existe)' 
+            });
             return;
         }
 
@@ -245,17 +321,33 @@ export const checkAuth = async (req: Request, res: Response): Promise<void> => {
         if (premiumVencido) {
             const actualizado = await modelUsuario.findByIdAndUpdate(
                 loggedUserId,
-                { tipoUsuario: 2 },
+                { tipoUsuario: 2, fechaVencimientoPremium: null },
                 { new: true }
-            );
+            ).select('-password');
+            
             if (actualizado) usuarioFinal = actualizado;
         }
 
-        res.status(200).json({ message: 'Autorizado', user: usuarioFinal });
+        //  Incluir plan en la respuesta y asegurar formato consistente
+        const usuarioResponse = {
+            ...usuarioFinal.toObject(),
+            plan: usuarioFinal.plan || null,
+            _id: usuarioFinal._id?.toString() || usuarioFinal._id
+        };
+
+        res.status(200).json({ 
+            success: true,
+            message: 'Autorizado', 
+            user: usuarioResponse
+        });
     } catch (error) {
         const err = error as Error;
-        console.log(err);
-        res.status(500).json({ message: err.message });
+        console.error(`Error en ${checkAuth.name}:`, err);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 };
 

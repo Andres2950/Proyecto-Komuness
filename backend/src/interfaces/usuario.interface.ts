@@ -9,4 +9,5 @@ export interface IUsuario extends Document {
     codigo: string;
     fechaVencimientoPremium?: Date; // Fecha de vencimiento para usuarios premium
     limitePublicaciones?: number; // Límite personalizado de publicaciones (si no se define, usa el global)
+    plan?: 'mensual' | 'anual' | null; 
 }

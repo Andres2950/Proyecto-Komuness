@@ -8,8 +8,14 @@ const usuarioSchema = new Schema({
     password: { type: String, required: true },
     tipoUsuario: { type: Number, required: true }, // 0=super-admin, 1=admin, 2=básico, 3=premium
     codigo: { type: String, required: true },
-    fechaVencimientoPremium: { type: Date, required: false }, // Fecha de vencimiento para usuarios premium
+     fechaVencimientoPremium: { type: Date, required: false }, // Fecha de vencimiento para usuarios premium
     limitePublicaciones: { type: Number, required: false }, // Límite personalizado (opcional)
+    plan: { 
+        type: String, 
+        enum: ['mensual', 'anual', null], 
+        default: null,
+        required: false 
+    },
 });
 
 export const modelUsuario = model<IUsuario>('Usuario', usuarioSchema);

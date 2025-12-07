@@ -19,7 +19,7 @@ export const PerfilUsuario = () => {
   const [archivos, setArchivos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [pendingUpdates, setPendingUpdates] = useState([]);
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth(); 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalLimitesAbierto, setModalLimitesAbierto] = useState(false);
   const [modalPagosAbierto, setModalPagosAbierto] = useState(false);
@@ -413,68 +413,101 @@ export const PerfilUsuario = () => {
 
   // ✅ CAMBIO: ahora soporta Admin (1), Básico (2) y Premium (3)
   const actualizarMembresia = async (id, opcion) => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    const promesa = (async () => {
-      // ✅ ADMIN: usar el endpoint que ya sabes que funciona (versión vieja)
-      if (opcion === "admin") {
-        const res = await fetch(`${API_URL}/usuario/${id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ tipoUsuario: 1 }),
-        });
-
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload?.message || `Error ${res.status}`);
-        return payload?.data ?? payload;
-      }
-
-      // ✅ BÁSICO / PREMIUM: usar /membresia
-      let tipoUsuario = 2;
-      let plan;
-
-      if (opcion === "basico") {
-        tipoUsuario = 2;
-      } else if (opcion === "premium_mensual") {
-        tipoUsuario = 3;
-        plan = "mensual";
-      } else if (opcion === "premium_anual") {
-        tipoUsuario = 3;
-        plan = "anual";
-      }
-
-      const body = tipoUsuario === 3 ? { tipoUsuario, plan } : { tipoUsuario };
-
-      const res = await fetch(`${API_URL}/usuario/${id}/membresia`, {
+  const promesa = (async () => {
+    // ✅ ADMIN: usar el endpoint que ya sabes que funciona (versión vieja)
+    if (opcion === "admin") {
+      const res = await fetch(`${API_URL}/usuario/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ tipoUsuario: 1 }),
       });
 
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload?.message || `Error ${res.status}`);
-      return payload?.data ?? payload;
-    })();
+      
+      const usuarioActualizado = payload?.data ?? payload;
+      
+      //  ACTUALIZAR EL CONTEXTO SI ES EL USUARIO ACTUAL
+      if (user?._id === id && updateUser) {
+        updateUser({
+          ...usuarioActualizado,
+          plan: usuarioActualizado.plan || null
+        });
+      }
+      
+      return {
+        ...usuarioActualizado,
+        plan: usuarioActualizado.plan || null
+      };
+    }
 
-    toast.promise(promesa, {
-      loading: "Actualizando tipo de usuario...",
-      success: "Tipo de usuario actualizado",
-      error: (e) => e.message || "Error al actualizar tipo de usuario",
+    // ✅ BÁSICO / PREMIUM: usar /membresia
+    let tipoUsuario = 2;
+    let plan;
+
+    if (opcion === "basico") {
+      tipoUsuario = 2;
+    } else if (opcion === "premium_mensual") {
+      tipoUsuario = 3;
+      plan = "mensual";
+    } else if (opcion === "premium_anual") {
+      tipoUsuario = 3;
+      plan = "anual";
+    }
+
+    const body = tipoUsuario === 3 ? { tipoUsuario, plan } : { tipoUsuario };
+
+    const res = await fetch(`${API_URL}/usuario/${id}/membresia`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
     });
 
-    try {
-      const usuarioActualizado = await promesa;
-      setUsuarios((prev) => prev.map((u) => (u._id === id ? usuarioActualizado : u)));
-    } catch (e) {
-      console.error(e);
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.message || `Error ${res.status}`);
+    
+    const usuarioActualizado = payload?.data ?? payload;
+    
+    //  ACTUALIZAR EL CONTEXTO SI ES EL USUARIO ACTUAL
+    if (user?._id === id && updateUser) {
+      updateUser({
+        ...usuarioActualizado,
+        plan: usuarioActualizado.plan || null
+      });
     }
-  };
+    
+    return {
+      ...usuarioActualizado,
+      plan: usuarioActualizado.plan || null
+    };
+  })();
+
+  toast.promise(promesa, {
+    loading: "Actualizando tipo de usuario...",
+    success: "Tipo de usuario actualizado",
+    error: (e) => e.message || "Error al actualizar tipo de usuario",
+  });
+
+  try {
+    const usuarioActualizado = await promesa;
+    setUsuarios((prev) => prev.map((u) => (u._id === id ? usuarioActualizado : u)));
+    
+    //  REFRESCAR DATOS DE LÍMITE SI ES EL USUARIO ACTUAL
+    if (user?._id === id) {
+      await cargarDatosLimite();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -976,7 +1009,7 @@ export const PerfilUsuario = () => {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-bold text-white">Tu Membresía Premium</h3>
                 <span className="px-3 py-1 bg-yellow-600 text-white text-xs font-semibold rounded-full">
-                  Premium {limiteData.plan === 'anual' ? 'Anual' : 'Mensual'}
+                  Premium {user?.plan === 'anual' ? 'Anual' : 'Mensual'}
                 </span>
               </div>
 
