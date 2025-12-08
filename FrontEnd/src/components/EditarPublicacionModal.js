@@ -149,9 +149,9 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
 
       for (let [key, value] of data.entries()) {
         if (key === 'archivos') {
-          console.log(`  ${key}:`, value.name, value.size, 'bytes');
+          console.log('Bien');
         } else {
-          console.log(`  ${key}:`, value);
+          console.log('Bien');
         }
       }
 
