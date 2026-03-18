@@ -1039,7 +1039,7 @@ export const PerfilUsuario = () => {
                   ></div>
                 </div>
                 <p className="text-xs text-gray-300 mt-1">
-                  {limiteData.publicacionesActuales >= limiteData.limite
+                  {limiteData.publicacionesActuales > limiteData.limite
                     ? "¡Has alcanzado tu límite!"
                     : `${
                         limiteData.limite - limiteData.publicacionesActuales
