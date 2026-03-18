@@ -134,19 +134,17 @@ app.use(globalErrorHandler);
 
 const port = process.env.PORT || 5000;
 
-// Conexión a MongoDB
-(async () => {
-  await connectBD(process.env.BD_URL!);
-  console.log("✅ MongoDB conectado");
-})();
-
 export default app;
 
 if (require.main === module) {
-  connectBD(process.env.BD_URL || '').then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
+  connectBD(process.env.BD_URL || '')
+    .then(() => {
+      app.listen(port, () => {
+        console.log(`Server is running on http://localhost:${port}`);
+      });
+    })
+    .catch((error) => {
+      console.error('Failed to start server:', error);
+      process.exit(1);
     });
-  });
 }
