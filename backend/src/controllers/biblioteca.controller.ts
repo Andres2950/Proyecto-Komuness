@@ -155,7 +155,7 @@ class BibliotecaController {
                     });
 
                     // 2) Asigna la URL usando el _id generado y guarda una sola vez
-                    archivo.url = `${process.env.PUBLIC_BASE_URL ||  'https://komuness.duckdns.org'}/api/biblioteca/files/${archivo._id}`;
+                    archivo.url = `${process.env.PUBLIC_BASE_URL ||  'https://localhost:5000'}/api/biblioteca/files/${archivo._id}`;
                     await archivo.save();
 
                     return {
