@@ -53,22 +53,22 @@ export const InitForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-start justify-center bg-gray-800/80 px-6 py-12 pt-24">
-      <div className="w-full max-w-xl bg-[#12143d] text-[#f0f0f0] rounded-2xl shadow-2xl p-10">
-        <h2 className="text-4xl font-bold mb-8 text-center text-[#ffbf30]">
+    <div className="min-h-screen flex items-start justify-center bg-gray-800/80 px-4 sm:px-6 py-8 sm:py-12 pt-20 sm:pt-24">
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-xl bg-[#12143d] text-[#f0f0f0] rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 sm:mb-8 text-center text-[#ffbf30]">
           ¡Bienvenido(a)!
         </h2>
 
         {/* Mostrar mensaje de error si existe */}
         {errorMensaje && (
-          <div className="mb-4 text-red-400 text-center font-semibold">
+          <div className="mb-4 text-red-400 text-center font-semibold text-sm sm:text-base">
             {errorMensaje}
           </div>
         )}
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-base mb-2">
+            <label htmlFor="email" className="block text-sm sm:text-base mb-2">
               Correo Electrónico
             </label>
             <input
@@ -77,12 +77,12 @@ export const InitForm = () => {
               placeholder="ejemplo@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-5 py-3 rounded-xl bg-[#404270] border-none text-[#f0f0f0] focus:ring-2 focus:ring-[#5445ff] outline-none"
+              className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#404270] border-none text-[#f0f0f0] focus:ring-2 focus:ring-[#5445ff] outline-none text-sm sm:text-base"
               required
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-base mb-2">
+            <label htmlFor="password" className="block text-sm sm:text-base mb-2">
               Contraseña
             </label>
             <div className="relative">
@@ -92,31 +92,31 @@ export const InitForm = () => {
                 placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-5 py-3 rounded-xl bg-[#404270] border-none text-[#f0f0f0] focus:ring-2 focus:ring-[#5445ff] outline-none pr-12"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#404270] border-none text-[#f0f0f0] focus:ring-2 focus:ring-[#5445ff] outline-none pr-12 text-sm sm:text-base"
                 required
               />
               <button
                 type="button"
                 onClick={toggleMostrarContrasena}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-[#ffbf30] outline-none focus:outline-none"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs sm:text-sm text-[#ffbf30] outline-none focus:outline-none"
               >
                 {mostrarContrasena ? 'Ocultar' : 'Ver'}
               </button>
             </div>
             <div className="text-right mt-2">
-              <a href="/recuperar" className="text-sm text-[#ffbf30] hover:underline">
+              <a href="/recuperar" className="text-xs sm:text-sm text-[#ffbf30] hover:underline">
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
           </div>
           <button
             type="submit"
-            className="w-full bg-[#5445ff] hover:bg-[#4032cc] text-white font-semibold rounded-xl py-3 text-lg"
+            className="w-full bg-[#5445ff] hover:bg-[#4032cc] text-white font-semibold rounded-xl py-2.5 sm:py-3 text-base sm:text-lg"
           >
             Iniciar Sesión
           </button>
         </form>
-        <p className="mt-6 text-sm text-center">
+        <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-center">
           ¿No tienes cuenta?{" "}
           <a href="/crearUsr" className="text-[#ffbf30] font-medium">
             Regístrate
