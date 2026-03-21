@@ -48,7 +48,7 @@ export const CategoriaFilter = () => {
         onChange={handleCategoriaChange}
         className=" border rounded border-e-blue-900  p-2 bg-blue-900 text-gray-50 text-sm" 
       >
-        <option value="">Todas las categorías</option>
+        <option value="">Todas</option>
         {categorias.map((categoria) => (
           <option key={categoria._id} value={categoria._id}>
             {categoria.nombre.toUpperCase()}

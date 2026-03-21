@@ -71,14 +71,6 @@ const Footer = () => {
                   Emprendimientos
                 </button>
               </li>
-              <li>
-                <button 
-                  onClick={() => handleNavigation('/acerca-de')}
-                  className="footer-link text-gray-300 hover:text-white transition-colors duration-200 inline-block"
-                >
-                  ¿Quiénes Somos?
-                </button>
-              </li>
             </ul>
           </div>
           <div className="footer-section text-center md:text-left">

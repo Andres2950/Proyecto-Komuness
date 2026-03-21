@@ -148,18 +148,6 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
             </div>
           </div>
         </div>
-
-        {mostrarBotonVolver() && (
-          <div className="absolute top-4 left-10 z-20">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
-            >
-              <IoMdArrowRoundBack color="black" size={21} />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Mensaje de búsqueda */}
