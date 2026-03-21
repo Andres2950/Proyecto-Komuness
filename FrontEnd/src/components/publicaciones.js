@@ -23,8 +23,6 @@ export const Publicaciones = ({ tag: propTag }) => {
   const [cards, setCards] = useState([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [categoriaFilter, setCategoriaFilter] = useState(null);
-  const [searchFilter, setSearchFilter] = useState(null);
   const [tag, setTag] = useState(propTag);
   const limite = 12;
   const [formulario, setFormulario] = useState(false);
@@ -32,14 +30,10 @@ export const Publicaciones = ({ tag: propTag }) => {
   const { user } = useAuth();
   const [publicaciones, setPublicaciones] = useState([]);
 
-  useEffect(() => {
-    const categoriaId = searchParams.get('categoria');
-    const searchTerm = searchParams.get('q');
-    const isSearch = searchParams.get('search') === 'true';
-    
-    setCategoriaFilter(categoriaId);
-    setSearchFilter(isSearch ? searchTerm : null);
-  }, [searchParams]);
+  const categoriaFilter = searchParams.get('categoria');
+  const searchTerm = searchParams.get('q');
+  const isSearch = searchParams.get('search') === 'true';
+  const searchFilter = isSearch ? searchTerm : null;
 
   useEffect(() => {
     const path = location.pathname;
@@ -56,9 +50,6 @@ export const Publicaciones = ({ tag: propTag }) => {
     }
 
     setTag(newTag);
-    setPublicaciones([]);
-    setPaginaActual(1);
-    setTotalPaginas(1);
   }, [location.pathname, propTag]);
 
   useEffect(() => {

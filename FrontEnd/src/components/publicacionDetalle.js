@@ -12,7 +12,7 @@ import {
   IoLogoWhatsapp,
   IoMdCreate  
 } from "react-icons/io";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { API_URL, getCategoriaById } from "../utils/api";
 import { EditarPublicacionModal } from './EditarPublicacionModal';
@@ -26,6 +26,7 @@ import '../CSS/publicacionDetalle.css';
 
 export const PublicacionDetalle = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { user } = useAuth();
 
@@ -240,6 +241,14 @@ export const PublicacionDetalle = () => {
   }
 
   if (!publicacion) return null;
+  
+  const handleBack = () => {
+    if (location.state?.from) {
+      navigate(location.state.from);
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <div className="publicacion-detalle-container">
@@ -256,7 +265,7 @@ export const PublicacionDetalle = () => {
           {/* Botón de regreso - Izquierda */}
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="publicacion-back-btn"
           >
             <IoMdArrowRoundBack color="black" size={21} />

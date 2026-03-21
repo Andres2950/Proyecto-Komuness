@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PublicacionModal from "./publicacionModal";
 import { useAuth } from "./context/AuthContext";
 import CategoriaBadge from "./categoriaBadge";
@@ -48,6 +48,7 @@ export const PublicacionCard = ({ publicacion }) => {
   // ========== FIN DE MODIFICACIÓN ==========
 
   const navigate = useNavigate();
+  const location = useNavigate();
   const [selectedPub, setSelectedPub] = useState(false);
   const { user } = useAuth();
   
@@ -64,7 +65,9 @@ export const PublicacionCard = ({ publicacion }) => {
   };
 
   const handleClick = () => {
-    navigate(`/publicaciones/${publicacion._id}`);
+    navigate(`/publicaciones/${publicacion._id}`, {
+      state: {from: location.pathname + location.search}
+    });
   };
 
   const handleDeleteClick = (e) => {
