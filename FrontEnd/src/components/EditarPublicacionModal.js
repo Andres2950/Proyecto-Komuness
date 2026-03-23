@@ -14,6 +14,7 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
     fechaEvento: "",
     horaEvento: "",
     precio: "",
+    moneda: "CRC",
     precioNegociable: false,
     precioEstudiante: "",
     precioCiudadanoOro: "",
@@ -40,6 +41,7 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
         fechaEvento: publicacion.fechaEvento || "",
         horaEvento: publicacion.horaEvento || "",
         precio: publicacion.precio !== undefined && publicacion.precio !== null ? publicacion.precio.toString() : "",
+        moneda: publicacion.moneda || (publicacion.monedaSimbolo === '$' ? 'USD' : 'CRC'),
         precioNegociable: publicacion.precioNegociable === true,
         precioEstudiante: publicacion.precioEstudiante !== undefined && publicacion.precioEstudiante !== null ? publicacion.precioEstudiante.toString() : "",
         precioCiudadanoOro: publicacion.precioCiudadanoOro !== undefined && publicacion.precioCiudadanoOro !== null ? publicacion.precioCiudadanoOro.toString() : "",
@@ -133,6 +135,7 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
         fechaEvento: formData.fechaEvento || "",
         horaEvento: formData.horaEvento || "",
         precio: formData.precio || "",
+        moneda: formData.moneda || "CRC",
         precioNegociable: formData.precioNegociable === true,
         precioEstudiante: formData.precioEstudiante || "",
         precioCiudadanoOro: formData.precioCiudadanoOro || "",
@@ -150,6 +153,7 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
       data.append("fechaEvento", formData.fechaEvento || "");
       data.append("horaEvento", formData.horaEvento || "");
       data.append("precio", formData.precio || "");
+      data.append("moneda", formData.moneda || "CRC");
       data.append("precioNegociable", String(formData.precioNegociable === true));
       data.append("precioEstudiante", formData.precioEstudiante || "");
       data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
@@ -393,6 +397,21 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
               
               {(publicacion.tag === "evento" || !formData.precioNegociable) && (
                 <>
+                  <div className="campo-grupo">
+                    <label htmlFor="moneda" className="campo-label">Moneda *:</label>
+                    <select
+                      id="moneda"
+                      name="moneda"
+                      value={formData.moneda}
+                      onChange={handleChange}
+                      className="campo-select"
+                      required
+                    >
+                      <option value="CRC">Colones (₡)</option>
+                      <option value="USD">Dólares ($)</option>
+                    </select>
+                  </div>
+
                   {/* Precio Regular */}
                   <div className="campo-grupo">
                     <label htmlFor="precio" className="campo-label">Precio regular *:</label>

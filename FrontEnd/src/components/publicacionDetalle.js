@@ -151,10 +151,19 @@ export const PublicacionDetalle = () => {
     }
   };
 
+  const getCurrencyMeta = () => {
+    const moneda = publicacion?.moneda === "USD" ? "USD" : "CRC";
+    if (moneda === "USD") {
+      return { symbol: "$", locale: "en-US" };
+    }
+    return { symbol: "₡", locale: "es-CR" };
+  };
+
   const formatPrecio = (precio) => {
     if (precio === 0 || precio === '0') return 'Gratis';
     if (Number.isFinite(Number(precio))) {
-      return `₡ ${Number(precio).toLocaleString("es-CR")}`;
+      const currency = getCurrencyMeta();
+      return `${currency.symbol} ${Number(precio).toLocaleString(currency.locale)}`;
     }
     return 'No especificado';
   };

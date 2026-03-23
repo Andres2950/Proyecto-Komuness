@@ -24,6 +24,7 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     fechaEvento: "",
     horaEvento: "",   // <-- NUEVO
     precio: "",
+    moneda: "CRC",
     precioNegociable: false,
     precioEstudiante: "",
     precioCiudadanoOro: "",
@@ -50,6 +51,7 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
         fechaEvento: "",
         horaEvento: "",
         precio: "",
+        moneda: "CRC",
         precioNegociable: false,
         precioEstudiante: "",
         precioCiudadanoOro: "",
@@ -127,6 +129,7 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     data.append("fechaEvento", formData.fechaEvento || "");
     data.append("horaEvento", formData.horaEvento || ""); // <-- NUEVO
     data.append("precio", formData.precio || "");
+    data.append("moneda", formData.moneda || "CRC");
     data.append("precioNegociable", String(formData.precioNegociable));
     data.append("precioEstudiante", formData.precioEstudiante || "");
     data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
@@ -298,6 +301,20 @@ return (
                 
                 {(formData.tag === "evento" || !formData.precioNegociable) && (
                   <>
+                    <div className="campo-grupo">
+                      <label className="campo-label">Moneda *:</label>
+                      <select
+                        name="moneda"
+                        value={formData.moneda}
+                        onChange={handleChange}
+                        className="campo-select"
+                        required
+                      >
+                        <option value="CRC">Colones (₡)</option>
+                        <option value="USD">Dólares ($)</option>
+                      </select>
+                    </div>
+
                     {/* Precio Regular */}
                     <div className="campo-grupo">
                       <label className="campo-label">Precio regular *:</label>

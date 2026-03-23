@@ -23,6 +23,8 @@ const publicacionUpdateSchema = new mongoose_1.Schema({
     fechaEvento: { type: String, required: false },
     horaEvento: { type: String, required: false },
     precio: { type: Number, required: false },
+    moneda: { type: String, enum: ['CRC', 'USD'], required: false, default: 'CRC' },
+    monedaSimbolo: { type: String, enum: ['₡', '$'], required: false, default: '₡' },
     precioNegociable: { type: Boolean, required: false, default: false },
     precioEstudiante: { type: Number, required: false },
     precioCiudadanoOro: { type: Number, required: false },
@@ -61,6 +63,8 @@ const publicacionSchema = new mongoose_1.Schema({
     fechaEvento: { type: String, required: false },
     horaEvento: { type: String, required: false },
     precio: { type: Number, required: false }, // Precio regular
+    moneda: { type: String, enum: ['CRC', 'USD'], required: false, default: 'CRC' },
+    monedaSimbolo: { type: String, enum: ['₡', '$'], required: false, default: '₡' },
     precioNegociable: { type: Boolean, required: false, default: false },
     precioEstudiante: { type: Number, required: false },
     precioCiudadanoOro: { type: Number, required: false },

@@ -50,6 +50,24 @@ function parseBoolean(input) {
     }
     return undefined;
 }
+function parseMoneda(input) {
+    if (input === undefined || input === null)
+        return undefined;
+    if (typeof input !== 'string')
+        return undefined;
+    const normalized = input.trim().toUpperCase();
+    if (normalized === 'CRC' || normalized === 'USD')
+        return normalized;
+    return undefined;
+}
+function getMonedaData(inputMoneda, inputMonedaSimbolo) {
+    var _a;
+    const moneda = (_a = parseMoneda(inputMoneda)) !== null && _a !== void 0 ? _a : (inputMonedaSimbolo === '$' ? 'USD' : 'CRC');
+    return {
+        moneda,
+        monedaSimbolo: moneda === 'USD' ? '$' : '₡',
+    };
+}
 // función para validar teléfono
 function parseTelefono(input) {
     if (typeof input !== 'string')
@@ -182,12 +200,13 @@ const createPublicacion = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const horaEvento = parseHoraEvento(body.horaEvento);
         const telefono = parseTelefono(body.telefono);
         const enlacesExternos = parseEnlacesExternos(body.enlacesExternos);
+        const monedaData = getMonedaData(body.moneda, body.monedaSimbolo);
         const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
         if (pricing.error) {
             res.status(400).json({ message: pricing.error });
             return;
         }
-        const publicacion = Object.assign(Object.assign({}, body), { autor: userId, publicado: `${body.publicado}` === 'true', precio: pricing.precio, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
+        const publicacion = Object.assign(Object.assign({}, body), { autor: userId, publicado: `${body.publicado}` === 'true', precio: pricing.precio, moneda: monedaData.moneda, monedaSimbolo: monedaData.monedaSimbolo, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
             telefono,
             enlacesExternos });
         const nuevaPublicacion = new publicacion_model_1.modelPublicacion(publicacion);
@@ -262,6 +281,7 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const horaEvento = parseHoraEvento(publicacion.horaEvento);
         const telefono = parseTelefono(publicacion.telefono);
         const enlacesExternos = parseEnlacesExternos(publicacion.enlacesExternos);
+        const monedaData = getMonedaData(publicacion.moneda, publicacion.monedaSimbolo);
         const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
         if (pricing.error) {
             res.status(400).json({ ok: false, message: pricing.error });
@@ -278,7 +298,7 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
         }
         // --- Crear documento y guardar ---
         const nuevaPublicacion = new publicacion_model_1.modelPublicacion(Object.assign(Object.assign({}, publicacion), { autor: userId, // 🔴 forzamos autor desde el token
-            categoria, adjunto: adjuntos, publicado: `${publicacion.publicado}` === 'true', precio: pricing.precio, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
+            categoria, adjunto: adjuntos, publicado: `${publicacion.publicado}` === 'true', precio: pricing.precio, moneda: monedaData.moneda, monedaSimbolo: monedaData.monedaSimbolo, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
             telefono,
             enlacesExternos }));
         const savePost = yield nuevaPublicacion.save();
@@ -424,6 +444,11 @@ const updatePublicacion = (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (updatedData.hasOwnProperty('precioNegociable')) {
             updatedData.precioNegociable = parseBoolean(updatedData.precioNegociable) === true;
         }
+        if (updatedData.hasOwnProperty('moneda') || updatedData.hasOwnProperty('monedaSimbolo')) {
+            const monedaData = getMonedaData(updatedData.moneda, updatedData.monedaSimbolo);
+            updatedData.moneda = monedaData.moneda;
+            updatedData.monedaSimbolo = monedaData.monedaSimbolo;
+        }
         // Si viene horaEvento, normalizar a HH:mm (si no es válida, no pisa)
         if (updatedData.hasOwnProperty('horaEvento')) {
             const parsedHora = parseHoraEvento(updatedData.horaEvento);
@@ -566,7 +591,7 @@ const getEventosPorFecha = (req, res) => __awaiter(void 0, void 0, void 0, funct
         })
             .populate('autor', 'nombre')
             .populate('categoria', 'nombre')
-            .select('titulo fechaEvento horaEvento contenido adjunto _id precio')
+            .select('titulo fechaEvento horaEvento contenido adjunto _id precio moneda monedaSimbolo')
             .sort({ fechaEvento: 1 });
         res.status(200).json(eventos);
     }
@@ -593,7 +618,7 @@ const searchPublicacionesByTitulo = (req, res) => __awaiter(void 0, void 0, void
         })
             .populate('autor', 'nombre')
             .populate('categoria', 'nombre estado')
-            .select('titulo tag autor categoria fecha fechaEvento precio adjunto')
+            .select('titulo tag autor categoria fecha fechaEvento precio moneda monedaSimbolo adjunto')
             .limit(searchLimit)
             .sort({ createdAt: -1 });
         res.status(200).json({

@@ -13,6 +13,8 @@ export interface IPublicacion {
   fechaEvento?: string;
   horaEvento?: string;
   precio?: number;
+  moneda?: 'CRC' | 'USD';
+  monedaSimbolo?: '₡' | '$';
   precioNegociable?: boolean;
   precioEstudiante?: number;     
   precioCiudadanoOro?: number;   
@@ -61,6 +63,8 @@ export interface IPublicacionUpdate {
   fechaEvento?: string;
   horaEvento?: string;
   precio?: number;
+  moneda?: 'CRC' | 'USD';
+  monedaSimbolo?: '₡' | '$';
   precioNegociable?: boolean;
   precioEstudiante?: number;
   precioCiudadanoOro?: number;

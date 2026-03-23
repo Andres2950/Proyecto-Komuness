@@ -35,6 +35,24 @@ function parseBoolean(input: any): boolean | undefined {
   return undefined;
 }
 
+function parseMoneda(input: any): 'CRC' | 'USD' | undefined {
+  if (input === undefined || input === null) return undefined;
+  if (typeof input !== 'string') return undefined;
+  const normalized = input.trim().toUpperCase();
+  if (normalized === 'CRC' || normalized === 'USD') return normalized;
+  return undefined;
+}
+
+function getMonedaData(inputMoneda: any, inputMonedaSimbolo: any): { moneda: 'CRC' | 'USD'; monedaSimbolo: '₡' | '$' } {
+  const moneda = parseMoneda(inputMoneda)
+    ?? (inputMonedaSimbolo === '$' ? 'USD' : 'CRC');
+
+  return {
+    moneda,
+    monedaSimbolo: moneda === 'USD' ? '$' : '₡',
+  };
+}
+
 // función para validar teléfono
 function parseTelefono(input: any): string | undefined {
   if (typeof input !== 'string') return undefined;
@@ -194,6 +212,7 @@ export const createPublicacion = async (req: Request, res: Response): Promise<vo
     const horaEvento = parseHoraEvento(body.horaEvento);
     const telefono = parseTelefono(body.telefono);
     const enlacesExternos = parseEnlacesExternos(body.enlacesExternos);
+    const monedaData = getMonedaData(body.moneda, body.monedaSimbolo);
 
       const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
       if (pricing.error) {
@@ -206,6 +225,8 @@ export const createPublicacion = async (req: Request, res: Response): Promise<vo
       autor: userId, // 🔴 forzamos autor desde el token
       publicado: `${(body as any).publicado}` === 'true',
       precio: pricing.precio,
+      moneda: monedaData.moneda,
+      monedaSimbolo: monedaData.monedaSimbolo,
       precioNegociable: pricing.precioNegociable,
       precioEstudiante: pricing.precioEstudiante,
       precioCiudadanoOro: pricing.precioCiudadanoOro,
@@ -291,6 +312,7 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
     const horaEvento = parseHoraEvento((publicacion as any).horaEvento);
     const telefono = parseTelefono((publicacion as any).telefono);
     const enlacesExternos = parseEnlacesExternos((publicacion as any).enlacesExternos);
+    const monedaData = getMonedaData((publicacion as any).moneda, (publicacion as any).monedaSimbolo);
 
       const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
       if (pricing.error) {
@@ -316,6 +338,8 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
       adjunto: adjuntos,
       publicado: `${(publicacion as any).publicado}` === 'true',
       precio: pricing.precio,
+      moneda: monedaData.moneda,
+      monedaSimbolo: monedaData.monedaSimbolo,
       precioNegociable: pricing.precioNegociable,
       precioEstudiante: pricing.precioEstudiante,
       precioCiudadanoOro: pricing.precioCiudadanoOro,
@@ -474,6 +498,12 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
 
     if (updatedData.hasOwnProperty('precioNegociable')) {
       updatedData.precioNegociable = parseBoolean(updatedData.precioNegociable) === true;
+    }
+
+    if (updatedData.hasOwnProperty('moneda') || updatedData.hasOwnProperty('monedaSimbolo')) {
+      const monedaData = getMonedaData(updatedData.moneda, updatedData.monedaSimbolo);
+      updatedData.moneda = monedaData.moneda;
+      updatedData.monedaSimbolo = monedaData.monedaSimbolo;
     }
 
     // Si viene horaEvento, normalizar a HH:mm (si no es válida, no pisa)
@@ -638,7 +668,7 @@ export const getEventosPorFecha = async (req: Request, res: Response): Promise<v
       })
       .populate('autor', 'nombre')
       .populate('categoria', 'nombre')
-      .select('titulo fechaEvento horaEvento contenido adjunto _id precio')
+      .select('titulo fechaEvento horaEvento contenido adjunto _id precio moneda monedaSimbolo')
       .sort({ fechaEvento: 1 });
 
     res.status(200).json(eventos);
@@ -668,7 +698,7 @@ export const searchPublicacionesByTitulo = async (req: Request, res: Response): 
       })
       .populate('autor', 'nombre')
       .populate('categoria', 'nombre estado')
-      .select('titulo tag autor categoria fecha fechaEvento precio adjunto')
+      .select('titulo tag autor categoria fecha fechaEvento precio moneda monedaSimbolo adjunto')
       .limit(searchLimit)
       .sort({ createdAt: -1 });
 
