@@ -5,6 +5,7 @@ import { IoMdArrowRoundBack } from "react-icons/io";
 import '../CSS/publicaciones.css';
 import PublicacionCard from './publicacionCard';
 import FormularioPublicacion from '../pages/formulario';
+import PublicacionModal from './publicacionModal';
 import { useAuth } from './context/AuthContext';
 import CategoriaFilter from './categoriaFilter';
 import BuscadorPublicaciones from './buscadorPublicaciones';
@@ -34,6 +35,8 @@ export const Publicaciones = ({ tag: propTag }) => {
   const searchTerm = searchParams.get('q');
   const isSearch = searchParams.get('search') === 'true';
   const searchFilter = isSearch ? searchTerm : null;
+
+  const [selectedPub, setSelectedPub] = useState(null);
 
   useEffect(() => {
     const path = location.pathname;
@@ -172,11 +175,20 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
           </p>
         ) : (
           cards.map((publicacion) => (
-            <PublicacionCard key={publicacion._id} publicacion={publicacion} />
+            <PublicacionCard key={publicacion._id} publicacion={publicacion} onDeleteClick={(pub) => setSelectedPub(pub)}/>
           ))
         )}
       </div>
-
+      
+      <PublicacionModal
+        name={selectedPub?.titulo}
+        date={selectedPub?.fecha}
+        tag={selectedPub?.tag}
+        id={selectedPub?._id}
+        isOpen={!!selectedPub}
+         onClose={() => setSelectedPub(null)}
+      />
+      
       <div className="w-full flex justify-center mt-6 gap-2 flex-wrap pb-6">
         {paginaActual > 1 && (
           <button

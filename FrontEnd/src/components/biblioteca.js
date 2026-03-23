@@ -614,6 +614,12 @@ export const Biblioteca = () => {
                     handleOpenModal(doc)
                   }
                 }}
+		onContextMenu={(e) => {
+		    e.preventDefault();
+		    if(doc.tag === 'carpeta'){
+			handleOpenModal(doc)
+		    }
+		}}
               />
             ))}
           </div>

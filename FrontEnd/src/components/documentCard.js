@@ -14,7 +14,7 @@ import {
 } from 'react-icons/ai'
 
 
-export const DocumentCard = ({ name, author, type = 'default', size, onClick }) => {
+export const DocumentCard = ({ name, author, type = 'default', size, onClick, onContextMenu }) => {
 
 
 
@@ -39,6 +39,7 @@ export const DocumentCard = ({ name, author, type = 'default', size, onClick }) 
     return (
         <div
             onClick={onClick}
+	    onContextMenu={onContextMenu}
             className="flex items-center gap-2 px-3 py-2 rounded-lg shadow bg-[#5445ff] hover:bg-[#3f35cc] cursor-pointer transition-all w-full max-w-full"
         >
             {/* Icono de documento */}

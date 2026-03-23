@@ -6,7 +6,7 @@ import CategoriaBadge from "./categoriaBadge";
 import ProfileErrorModal from "./ProfileErrorModal"; 
 import { API_URL, BASE_URL } from '../utils/api';
 
-export const PublicacionCard = ({ publicacion }) => {
+export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
    // ========== FUNCIÓN FORMATFECHA CORREGIDA ==========
   // MODIFICACIÓN: Se corrigió el problema de zona horaria
   // que causaba que las fechas se mostraran un día después
@@ -48,8 +48,7 @@ export const PublicacionCard = ({ publicacion }) => {
   // ========== FIN DE MODIFICACIÓN ==========
 
   const navigate = useNavigate();
-  const location = useNavigate();
-  const [selectedPub, setSelectedPub] = useState(false);
+  const location = useLocation();
   const { user } = useAuth();
   
   // Estados para controlar el modal de error de perfil
@@ -72,7 +71,7 @@ export const PublicacionCard = ({ publicacion }) => {
 
   const handleDeleteClick = (e) => {
     e.stopPropagation(); // Evita que se active el navigate
-    setSelectedPub(true);
+    onDeleteClick(publicacion);
   };
 
   // ========== FUNCIÓN PARA MANEJAR CLIC EN PERFIL ==========
@@ -287,18 +286,6 @@ export const PublicacionCard = ({ publicacion }) => {
             >
               Eliminar
             </button>
-              <PublicacionModal
-            name={publicacion.titulo}
-            date={publicacion.fecha}
-            tag={publicacion.tag}
-            id={publicacion._id}
-            isOpen={selectedPub}
-            onClose={() => setSelectedPub(false)}
-            onDelete={() => {
-              setSelectedPub(false);
-              // Aquí puedes agregar lógica adicional si necesitas
-            }}
-          />
           </div>
         )}
       </div>
