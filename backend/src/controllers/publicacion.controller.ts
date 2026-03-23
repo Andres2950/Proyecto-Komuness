@@ -24,6 +24,17 @@ function parsePrecio(input: any): number | undefined {
   return undefined;
 }
 
+function parseBoolean(input: any): boolean | undefined {
+  if (input === undefined || input === null || input === '') return undefined;
+  if (typeof input === 'boolean') return input;
+  if (typeof input === 'string') {
+    const normalized = input.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') return true;
+    if (normalized === 'false' || normalized === '0') return false;
+  }
+  return undefined;
+}
+
 // función para validar teléfono
 function parseTelefono(input: any): string | undefined {
   if (typeof input !== 'string') return undefined;
@@ -76,7 +87,68 @@ function formatearUrlEnlace(url: string): string {
 }
 
 function mustRequirePrecio(tag?: string): boolean {
-  return tag === 'evento' || tag === 'emprendimiento';
+  return tag === 'evento';
+}
+
+function validateAndNormalizePricing(
+  tag: string | undefined,
+  precio: number | undefined,
+  precioNegociable: boolean,
+  precioEstudiante: number | undefined,
+  precioCiudadanoOro: number | undefined,
+): {
+  error?: string;
+  precio: number | undefined;
+  precioNegociable: boolean;
+  precioEstudiante: number | undefined;
+  precioCiudadanoOro: number | undefined;
+} {
+  if (tag === 'evento') {
+    if (precio === undefined) {
+      return {
+        error: 'El campo precio regular es obligatorio y debe ser numérico para eventos.',
+        precio,
+        precioNegociable: false,
+        precioEstudiante,
+        precioCiudadanoOro,
+      };
+    }
+
+    return {
+      precio,
+      precioNegociable: false,
+      precioEstudiante,
+      precioCiudadanoOro,
+    };
+  }
+
+  if (tag === 'emprendimiento') {
+    if (precioNegociable) {
+      return {
+        precio: undefined,
+        precioNegociable: true,
+        precioEstudiante: undefined,
+        precioCiudadanoOro: undefined,
+      };
+    }
+
+    if (precio === undefined) {
+      return {
+        error: 'Para emprendimientos debes indicar un precio regular o marcarlo como precio negociable.',
+        precio,
+        precioNegociable,
+        precioEstudiante,
+        precioCiudadanoOro,
+      };
+    }
+  }
+
+  return {
+    precio,
+    precioNegociable,
+    precioEstudiante,
+    precioCiudadanoOro,
+  };
 }
 
 // Normaliza hora del evento en formato HH:mm (24h). Si no cumple, se ignora.
@@ -117,15 +189,15 @@ export const createPublicacion = async (req: Request, res: Response): Promise<vo
     const precio = parsePrecio(body.precio);
     const precioEstudiante = parsePrecio(body.precioEstudiante);
     const precioCiudadanoOro = parsePrecio(body.precioCiudadanoOro);
+    const precioNegociable = parseBoolean(body.precioNegociable) === true;
     const tag = body.tag;
     const horaEvento = parseHoraEvento(body.horaEvento);
     const telefono = parseTelefono(body.telefono);
     const enlacesExternos = parseEnlacesExternos(body.enlacesExternos);
 
-  
-
-    if (mustRequirePrecio(tag) && precio === undefined) {
-      res.status(400).json({ message: 'El campo precio regular es obligatorio y debe ser numérico para eventos/emprendimientos.' });
+      const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
+      if (pricing.error) {
+        res.status(400).json({ message: pricing.error });
       return;
     }
 
@@ -133,9 +205,10 @@ export const createPublicacion = async (req: Request, res: Response): Promise<vo
       ...body,
       autor: userId, // 🔴 forzamos autor desde el token
       publicado: `${(body as any).publicado}` === 'true',
-      precio,
-      precioEstudiante,
-      precioCiudadanoOro,
+      precio: pricing.precio,
+      precioNegociable: pricing.precioNegociable,
+      precioEstudiante: pricing.precioEstudiante,
+      precioCiudadanoOro: pricing.precioCiudadanoOro,
       horaEvento,
       telefono,
       enlacesExternos,
@@ -213,15 +286,15 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
     const precio = parsePrecio((publicacion as any).precio);
     const precioEstudiante = parsePrecio((publicacion as any).precioEstudiante);
     const precioCiudadanoOro = parsePrecio((publicacion as any).precioCiudadanoOro);
+    const precioNegociable = parseBoolean((publicacion as any).precioNegociable) === true;
     const tag = (publicacion as any).tag;
     const horaEvento = parseHoraEvento((publicacion as any).horaEvento);
     const telefono = parseTelefono((publicacion as any).telefono);
     const enlacesExternos = parseEnlacesExternos((publicacion as any).enlacesExternos);
 
-   
-
-    if (mustRequirePrecio(tag) && precio === undefined) {
-      res.status(400).json({ ok: false, message: 'El campo precio regular es obligatorio y debe ser numérico para eventos/emprendimientos.' });
+      const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
+      if (pricing.error) {
+        res.status(400).json({ ok: false, message: pricing.error });
       return;
     }
 
@@ -242,9 +315,10 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
       categoria,
       adjunto: adjuntos,
       publicado: `${(publicacion as any).publicado}` === 'true',
-      precio,
-      precioEstudiante,
-      precioCiudadanoOro,
+      precio: pricing.precio,
+      precioNegociable: pricing.precioNegociable,
+      precioEstudiante: pricing.precioEstudiante,
+      precioCiudadanoOro: pricing.precioCiudadanoOro,
       horaEvento,
       telefono,
       enlacesExternos,
@@ -379,9 +453,27 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const updatedData: Partial<IPublicacion> & Record<string, any> = { ...req.body };
 
+    const publicacion = await modelPublicacion.findById(id);
+    if (!publicacion) {
+      res.status(404).json({ message: 'Publicación no encontrada' });
+      return;
+    }
+
     if (updatedData.hasOwnProperty('precio')) {
       const parsed = parsePrecio(updatedData.precio);
       updatedData.precio = parsed;
+    }
+
+    if (updatedData.hasOwnProperty('precioEstudiante')) {
+      updatedData.precioEstudiante = parsePrecio(updatedData.precioEstudiante);
+    }
+
+    if (updatedData.hasOwnProperty('precioCiudadanoOro')) {
+      updatedData.precioCiudadanoOro = parsePrecio(updatedData.precioCiudadanoOro);
+    }
+
+    if (updatedData.hasOwnProperty('precioNegociable')) {
+      updatedData.precioNegociable = parseBoolean(updatedData.precioNegociable) === true;
     }
 
     // Si viene horaEvento, normalizar a HH:mm (si no es válida, no pisa)
@@ -392,16 +484,37 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
       else delete updatedData.horaEvento;
     }
 
-    if (mustRequirePrecio(updatedData.tag) && updatedData.precio === undefined) {
-      res.status(400).json({ message: 'El campo precio es obligatorio y debe ser numérico para eventos/emprendimientos.' });
+    const nextTag = (updatedData.tag as string | undefined) ?? publicacion.tag;
+    const nextPrecio = updatedData.hasOwnProperty('precio') ? updatedData.precio : publicacion.precio;
+    const nextPrecioEstudiante = updatedData.hasOwnProperty('precioEstudiante')
+      ? updatedData.precioEstudiante
+      : publicacion.precioEstudiante;
+    const nextPrecioCiudadanoOro = updatedData.hasOwnProperty('precioCiudadanoOro')
+      ? updatedData.precioCiudadanoOro
+      : publicacion.precioCiudadanoOro;
+    const nextPrecioNegociable = updatedData.hasOwnProperty('precioNegociable')
+      ? updatedData.precioNegociable === true
+      : publicacion.precioNegociable === true;
+
+    const pricing = validateAndNormalizePricing(
+      nextTag,
+      nextPrecio,
+      nextPrecioNegociable,
+      nextPrecioEstudiante,
+      nextPrecioCiudadanoOro,
+    );
+    if (pricing.error) {
+      res.status(400).json({ message: pricing.error });
       return;
     }
 
-    const publicacion = await modelPublicacion.findByIdAndUpdate(id, updatedData, { new: true });
-    if (!publicacion) {
-      res.status(404).json({ message: 'Publicación no encontrada' });
-      return;
-    }
+    updatedData.precio = pricing.precio;
+    updatedData.precioNegociable = pricing.precioNegociable;
+    updatedData.precioEstudiante = pricing.precioEstudiante;
+    updatedData.precioCiudadanoOro = pricing.precioCiudadanoOro;
+
+    Object.assign(publicacion, updatedData);
+    await publicacion.save();
     res.status(200).json(publicacion);
   } catch (error) {
     const err = error as Error;

@@ -162,9 +162,10 @@ export const PublicacionDetalle = () => {
   const precioRegular = publicacion?.precio;
   const precioEstudiante = publicacion?.precioEstudiante;
   const precioCiudadanoOro = publicacion?.precioCiudadanoOro;
+  const precioNegociable = publicacion?.precioNegociable === true;
 
   const mostrarPrecios = publicacion && 
-    (publicacion.tag === "evento" || publicacion.tag === "emprendimiento");
+    (publicacion.tag === "evento" || (publicacion.tag === "emprendimiento" && !precioNegociable));
   
 // === HORA DEL EVENTO (simple, ya viene "HH:mm") ===
     const mostrarHora =
@@ -391,6 +392,13 @@ export const PublicacionDetalle = () => {
                         </div>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {publicacion.tag === "emprendimiento" && precioNegociable && (
+                  <div className="publicacion-info-item">
+                    <span className="publicacion-info-label">Precio:</span>
+                    <span className="publicacion-info-value">Negociable</span>
                   </div>
                 )}
                  

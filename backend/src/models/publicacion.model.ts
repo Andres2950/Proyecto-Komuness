@@ -27,6 +27,7 @@ const publicacionUpdateSchema = new Schema<IPublicacionUpdate>({
   fechaEvento: { type: String, required: false },
   horaEvento: { type: String, required: false },
   precio: { type: Number, required: false },
+  precioNegociable: { type: Boolean, required: false, default: false },
   precioEstudiante: { type: Number, required: false },
   precioCiudadanoOro: { type: Number, required: false },
   enlacesExternos: { type: [enlaceExternoSchema], required: false },
@@ -69,6 +70,7 @@ const publicacionSchema = new Schema(
     fechaEvento: { type: String, required: false },
     horaEvento:  { type: String, required: false }, 
     precio: { type: Number, required: false }, // Precio regular
+    precioNegociable: { type: Boolean, required: false, default: false },
     precioEstudiante: { type: Number, required: false },
     precioCiudadanoOro: { type: Number, required: false }, 
     enlacesExternos: { type: [enlaceExternoSchema], required: false },

@@ -142,8 +142,11 @@ export const PublicacionCard = ({ publicacion }) => {
   // === PRECIO (normalizado) ===
   const rawPrecio = publicacion?.precio ?? publicacion?.Precio;
   const precio = Number(rawPrecio);
+  const precioNegociable =
+    publicacion.tag === "emprendimiento" && publicacion?.precioNegociable === true;
   const mostrarPrecio =
     (publicacion.tag === "evento" || publicacion.tag === "emprendimiento") &&
+    !precioNegociable &&
     Number.isFinite(precio);
 
   return (
@@ -167,6 +170,15 @@ export const PublicacionCard = ({ publicacion }) => {
             <div className="absolute top-2 left-2 z-10">
               <span className="px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-semibold shadow md:px-2 md:py-1 md:text-xs">
                 {formatPrecioCard(precio)}
+              </span>
+            </div>
+          )}
+
+          {/* Chip de precio negociable */}
+          {precioNegociable && (
+            <div className="absolute top-2 left-2 z-10">
+              <span className="px-1.5 py-0.5 rounded bg-amber-600 text-white text-[10px] font-semibold shadow md:px-2 md:py-1 md:text-xs">
+                Precio negociable
               </span>
             </div>
           )}

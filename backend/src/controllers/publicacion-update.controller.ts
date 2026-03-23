@@ -71,6 +71,11 @@ export const requestUpdatePublicacion = async (req: Request, res: Response): Pro
       const precio = parsePrecio(req.body.precio);
       if (precio !== undefined) updateData.precio = precio;
     }
+
+    if (req.body.precioNegociable !== undefined) {
+      updateData.precioNegociable = parseBoolean(req.body.precioNegociable) === true;
+    }
+
     if (req.body.precioEstudiante !== undefined) {
       const precioEstudiante = parsePrecio(req.body.precioEstudiante);
       if (precioEstudiante !== undefined) updateData.precioEstudiante = precioEstudiante;
@@ -78,6 +83,12 @@ export const requestUpdatePublicacion = async (req: Request, res: Response): Pro
     if (req.body.precioCiudadanoOro !== undefined) {
       const precioCiudadanoOro = parsePrecio(req.body.precioCiudadanoOro);
       if (precioCiudadanoOro !== undefined) updateData.precioCiudadanoOro = precioCiudadanoOro;
+    }
+
+    if (publicacion.tag === 'emprendimiento' && updateData.precioNegociable === true) {
+      updateData.precio = undefined;
+      updateData.precioEstudiante = undefined;
+      updateData.precioCiudadanoOro = undefined;
     }
 
     // Procesar enlaces externos
@@ -270,6 +281,7 @@ function mapUpdateFields(updateFields: Omit<IPublicacionUpdate, 'requestedAt' | 
   if (updateFields.fechaEvento !== undefined) mapped.fechaEvento = updateFields.fechaEvento;
   if (updateFields.horaEvento !== undefined) mapped.horaEvento = updateFields.horaEvento;
   if (updateFields.precio !== undefined) mapped.precio = updateFields.precio;
+  if (updateFields.precioNegociable !== undefined) mapped.precioNegociable = updateFields.precioNegociable;
   if (updateFields.precioEstudiante !== undefined) mapped.precioEstudiante = updateFields.precioEstudiante;
   if (updateFields.precioCiudadanoOro !== undefined) mapped.precioCiudadanoOro = updateFields.precioCiudadanoOro;
   if (updateFields.telefono !== undefined) mapped.telefono = updateFields.telefono;
@@ -336,6 +348,26 @@ export const approveUpdate = async (req: Request, res: Response): Promise<void> 
     if (updateFields.precio !== undefined && updateFields.precio !== publicacion.precio) {
       publicacion.precio = updateFields.precio;
       camposActualizados.push('precio');
+    }
+
+    if (updateFields.precioNegociable !== undefined && updateFields.precioNegociable !== publicacion.precioNegociable) {
+      publicacion.precioNegociable = updateFields.precioNegociable;
+      camposActualizados.push('precioNegociable');
+    }
+
+    if (publicacion.tag === 'emprendimiento' && updateFields.precioNegociable === true) {
+      if (publicacion.precio !== undefined) {
+        publicacion.precio = undefined;
+        camposActualizados.push('precio');
+      }
+      if (publicacion.precioEstudiante !== undefined) {
+        publicacion.precioEstudiante = undefined;
+        camposActualizados.push('precioEstudiante');
+      }
+      if (publicacion.precioCiudadanoOro !== undefined) {
+        publicacion.precioCiudadanoOro = undefined;
+        camposActualizados.push('precioCiudadanoOro');
+      }
     }
 
     if (updateFields.precioEstudiante !== undefined && updateFields.precioEstudiante !== publicacion.precioEstudiante) {
@@ -572,6 +604,17 @@ function parsePrecio(input: any): number | undefined {
     const cleaned = trimmed.replace(/[₡$,]/g, '');
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : undefined;
+  }
+  return undefined;
+}
+
+function parseBoolean(input: any): boolean | undefined {
+  if (input === undefined || input === null || input === '') return undefined;
+  if (typeof input === 'boolean') return input;
+  if (typeof input === 'string') {
+    const normalized = input.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') return true;
+    if (normalized === 'false' || normalized === '0') return false;
   }
   return undefined;
 }

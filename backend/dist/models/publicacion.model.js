@@ -12,8 +12,41 @@ const comentarioSchema = new mongoose_1.Schema({
 const adjuntoSchema = new mongoose_1.Schema({
     url: { type: String, required: true },
     key: { type: String, required: true }
+}, { _id: true });
+const enlaceExternoSchema = new mongoose_1.Schema({
+    nombre: { type: String, required: true },
+    url: { type: String, required: true }
 });
-//schema publicación
+const publicacionUpdateSchema = new mongoose_1.Schema({
+    titulo: { type: String, required: false },
+    contenido: { type: String, required: false },
+    fechaEvento: { type: String, required: false },
+    horaEvento: { type: String, required: false },
+    precio: { type: Number, required: false },
+    precioNegociable: { type: Boolean, required: false, default: false },
+    precioEstudiante: { type: Number, required: false },
+    precioCiudadanoOro: { type: Number, required: false },
+    enlacesExternos: { type: [enlaceExternoSchema], required: false },
+    telefono: { type: String, required: false },
+    categoria: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Categoria', required: false },
+    adjunto: { type: [adjuntoSchema], required: false },
+    requestedAt: { type: String, required: true },
+    requestedBy: { type: String, required: true }
+}, { _id: false }); // IMPORTANTE: evitar _id duplicados
+// Schema para historial de ediciones
+const editHistorySchema = new mongoose_1.Schema({
+    version: { type: Number, required: true },
+    data: { type: mongoose_1.Schema.Types.Mixed, required: true },
+    editedAt: { type: String, required: true },
+    editedBy: { type: String, required: true },
+    approvedBy: { type: String },
+    approvedAt: { type: String },
+    status: {
+        type: String,
+        enum: ['approved', 'rejected', 'pending'],
+        default: 'pending'
+    }
+});
 const publicacionSchema = new mongoose_1.Schema({
     titulo: { type: String, required: true },
     contenido: { type: String, required: true },
@@ -27,8 +60,41 @@ const publicacionSchema = new mongoose_1.Schema({
     // Evento
     fechaEvento: { type: String, required: false },
     horaEvento: { type: String, required: false },
-    precio: { type: Number, required: false },
+    precio: { type: Number, required: false }, // Precio regular
+    precioNegociable: { type: Boolean, required: false, default: false },
+    precioEstudiante: { type: Number, required: false },
+    precioCiudadanoOro: { type: Number, required: false },
+    enlacesExternos: { type: [enlaceExternoSchema], required: false },
+    telefono: { type: String, required: false },
     // categorías de área
-    categoria: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Categoria', required: true }
-}, { timestamps: true });
+    categoria: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Categoria', required: true },
+    // CONTROL DE EDICIONES 
+    editCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    maxEdits: {
+        type: Number,
+        default: 3
+    },
+    lastEditRequest: {
+        type: String,
+        default: null
+    },
+    pendingUpdate: {
+        type: publicacionUpdateSchema,
+        default: null
+    },
+    editHistory: {
+        type: [editHistorySchema],
+        default: []
+    }
+}, {
+    timestamps: true,
+    validateBeforeSave: true,
+    strict: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
 exports.modelPublicacion = (0, mongoose_1.model)('Publicacion', publicacionSchema);

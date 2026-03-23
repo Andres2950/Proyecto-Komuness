@@ -13,6 +13,7 @@ export interface IPublicacion {
   fechaEvento?: string;
   horaEvento?: string;
   precio?: number;
+  precioNegociable?: boolean;
   precioEstudiante?: number;     
   precioCiudadanoOro?: number;   
   enlacesExternos?: IEnlaceExterno[]; 
@@ -60,6 +61,7 @@ export interface IPublicacionUpdate {
   fechaEvento?: string;
   horaEvento?: string;
   precio?: number;
+  precioNegociable?: boolean;
   precioEstudiante?: number;
   precioCiudadanoOro?: number;
   enlacesExternos?: IEnlaceExterno[];
