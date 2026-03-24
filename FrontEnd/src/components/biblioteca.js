@@ -65,21 +65,51 @@ export const Biblioteca = () => {
 
   // Configuración de dropzone
    // Aumentado a 200MB. Mantener en sync con el servidor (env LIBRARY_MAX_FILE_SIZE_MB)
-   const maxSize = 200 * 1024 * 1024 // 200 MB
+  const maxSize = 200 * 1024 * 1024 // 200 MB
+  const ALLOWED_LIBRARY_ACCEPT = {
+    'application/pdf': ['.pdf'],
+    'application/vnd.ms-excel': ['.xls'],
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'application/vnd.ms-powerpoint': ['.ppt'],
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+    'text/plain': ['.txt'],
+    'image/png': ['.png'],
+    'image/jpeg': ['.jpg', '.jpeg'],  // Solo estos, no .jfif, .pjpeg, etc.
+    'image/webp': ['.webp'],
+    'application/zip': ['.zip'],
+    'application/x-rar-compressed': ['.rar'],
+    'application/x-rar': ['.rar'],
+  }
+  const ALLOWED_EXTENSIONS = new Set([
+    '.pdf', '.xls', '.xlsx', '.doc', '.docx', '.ppt', '.pptx',
+    '.txt', '.png', '.jpg', '.jpeg', '.webp', '.zip', '.rar'
+  ])
   const {
     acceptedFiles,
     fileRejections,
     getRootProps,
     getInputProps,
     isDragActive,
-    inputRef // RF023: Para limpiar los archivos después de subir
+    inputRef, // RF023: Para limpiar los archivos después de subir
   } = useDropzone({
     maxSize,
+    accept: ALLOWED_LIBRARY_ACCEPT,
+    validator: (file) => {
+      const ext = extOf(file.name)
+      if (!ALLOWED_EXTENSIONS.has(ext)) {
+        return { code: 'file-invalid-type', message: 'Extensión no permitida' }
+      }
+      return null
+    },
     onDropRejected: (fileRejections) => {
       fileRejections.forEach(({ file, errors }) => {
         errors.forEach(error => {
           if (error.code === 'file-too-large') {
-             toast.error(`El archivo ${file.name} es demasiado grande. Tamaño máximo permitido: 201 MB.`)
+            toast.error(`El archivo ${file.name} es demasiado grande. Tamaño máximo permitido: 200 MB.`)
+          } else if (error.code === 'file-invalid-type') {
+            toast.error(`Tipo de archivo no permitido: ${file.name}. Permitidos: PDF, Excel, Word, PPT, TXT, PNG, JPG, WEBP, ZIP y RAR.`)
           } else {
             toast.error(`Error al subir el archivo ${file.name}: ${error.message}`)
           }
