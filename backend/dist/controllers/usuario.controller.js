@@ -346,7 +346,7 @@ function enviarCorreoRecuperacion(req, res) {
         const hashedPassword = yield (0, bcryptjs_1.hashPassword)(newPassword);
         // opciones del correo electrónico con la nueva contraseña
         const mailOptions = {
-            from: `"Komuness" <${process.env.MAIL_USER}>`,
+            from: process.env.MAIL_USER || 'komuness334@zohomail.com',
             to: email,
             subject: 'Recuperación de contraseña',
             html: `

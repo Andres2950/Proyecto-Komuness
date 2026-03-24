@@ -24,6 +24,8 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     fechaEvento: "",
     horaEvento: "",   // <-- NUEVO
     precio: "",
+    moneda: "CRC",
+    precioNegociable: false,
     precioEstudiante: "",
     precioCiudadanoOro: "",
     telefono: "",
@@ -49,6 +51,8 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
         fechaEvento: "",
         horaEvento: "",
         precio: "",
+        moneda: "CRC",
+        precioNegociable: false,
         precioEstudiante: "",
         precioCiudadanoOro: "",
         telefono: "",
@@ -59,8 +63,24 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
   }, [isOpen, openTag]); 
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    const normalizedValue = type === "checkbox" ? checked : value;
+    setFormData((prev) => ({ ...prev, [name]: normalizedValue }));
+  };
+
+  const handlePrecioNegociableChange = (e) => {
+    const checked = e.target.checked;
+    setFormData((prev) => ({
+      ...prev,
+      precioNegociable: checked,
+      ...(checked
+        ? {
+            precio: "",
+            precioEstudiante: "",
+            precioCiudadanoOro: "",
+          }
+        : {}),
+    }));
   };
 
   const handleImageChange = (e) => {
@@ -109,6 +129,8 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     data.append("fechaEvento", formData.fechaEvento || "");
     data.append("horaEvento", formData.horaEvento || ""); // <-- NUEVO
     data.append("precio", formData.precio || "");
+    data.append("moneda", formData.moneda || "CRC");
+    data.append("precioNegociable", String(formData.precioNegociable));
     data.append("precioEstudiante", formData.precioEstudiante || "");
     data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
     data.append("telefono", formData.telefono || "");
@@ -255,46 +277,85 @@ return (
             {(formData.tag === "evento" || formData.tag === "emprendimiento") && (
               <div className="precios-seccion">
                 <h3 className="precios-titulo">Precios</h3>
+
+                {formData.tag === "emprendimiento" && (
+                  <div className="precio-negociable-box">
+                    <div className="precio-negociable-header">
+                      <input
+                        id="precioNegociableCrear"
+                        type="checkbox"
+                        name="precioNegociable"
+                        checked={formData.precioNegociable === true}
+                        onChange={handlePrecioNegociableChange}
+                        className="precio-negociable-checkbox"
+                      />
+                      <label htmlFor="precioNegociableCrear" className="precio-negociable-label">
+                        Precio negociable
+                      </label>
+                    </div>
+                    <p className="precio-negociable-help">
+                      Si activas esta opción, no se mostrará un precio fijo en el emprendimiento.
+                    </p>
+                  </div>
+                )}
                 
-                {/* Precio Regular */}
-                <div className="campo-grupo">
-                  <label className="campo-label">Precio regular *:</label>
-                  <input
-                    type="number"
-                    name="precio"
-                    value={formData.precio}
-                    onChange={handleChange}
-                    className="campo-input"
-                    required
-                    placeholder="Ej: 10000"
-                  />
-                </div>
+                {(formData.tag === "evento" || !formData.precioNegociable) && (
+                  <>
+                    <div className="campo-grupo">
+                      <label className="campo-label">Moneda *:</label>
+                      <select
+                        name="moneda"
+                        value={formData.moneda}
+                        onChange={handleChange}
+                        className="campo-select"
+                        required
+                      >
+                        <option value="CRC">Colones (₡)</option>
+                        <option value="USD">Dólares ($)</option>
+                      </select>
+                    </div>
 
-                {/* Precio Estudiante */}
-                <div className="campo-grupo">
-                  <label className="campo-label">Precio estudiante (opcional):</label>
-                  <input
-                    type="number"
-                    name="precioEstudiante"
-                    value={formData.precioEstudiante}
-                    onChange={handleChange}
-                    className="campo-input"
-                    placeholder="Ej: 5000"
-                  />
-                </div>
+                    {/* Precio Regular */}
+                    <div className="campo-grupo">
+                      <label className="campo-label">Precio regular *:</label>
+                      <input
+                        type="number"
+                        name="precio"
+                        value={formData.precio}
+                        onChange={handleChange}
+                        className="campo-input"
+                        required
+                        placeholder="Ej: 10000"
+                      />
+                    </div>
 
-                {/* Precio Ciudadano de Oro */}
-                <div className="campo-grupo">
-                  <label className="campo-label">Precio ciudadano de oro (opcional):</label>
-                  <input
-                    type="number"
-                    name="precioCiudadanoOro"
-                    value={formData.precioCiudadanoOro}
-                    onChange={handleChange}
-                    className="campo-input"
-                    placeholder="Ej: 7000"
-                  />
-                </div>
+                    {/* Precio Estudiante */}
+                    <div className="campo-grupo">
+                      <label className="campo-label">Precio estudiante (opcional):</label>
+                      <input
+                        type="number"
+                        name="precioEstudiante"
+                        value={formData.precioEstudiante}
+                        onChange={handleChange}
+                        className="campo-input"
+                        placeholder="Ej: 5000"
+                      />
+                    </div>
+
+                    {/* Precio Ciudadano de Oro */}
+                    <div className="campo-grupo">
+                      <label className="campo-label">Precio ciudadano de oro (opcional):</label>
+                      <input
+                        type="number"
+                        name="precioCiudadanoOro"
+                        value={formData.precioCiudadanoOro}
+                        onChange={handleChange}
+                        className="campo-input"
+                        placeholder="Ej: 7000"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
