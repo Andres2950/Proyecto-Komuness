@@ -123,6 +123,15 @@ const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  if (err && typeof err.message === 'string' && err.message.includes('Tipo de archivo no permitido')) {
+    res.status(400).json({
+      success: false,
+      message: err.message,
+      errorCode: 'INVALID_FILE_TYPE'
+    });
+    return;
+  }
+
   if (err) {
     console.error('Unhandled error middleware:', err);
     res.status(500).json({ success: false, message: 'Error interno del servidor' });
