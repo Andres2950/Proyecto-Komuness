@@ -123,6 +123,15 @@ const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  if (err && typeof err.message === 'string' && err.message.includes('Tipo de archivo no permitido')) {
+    res.status(400).json({
+      success: false,
+      message: err.message,
+      errorCode: 'INVALID_FILE_TYPE'
+    });
+    return;
+  }
+
   if (err) {
     console.error('Unhandled error middleware:', err);
     res.status(500).json({ success: false, message: 'Error interno del servidor' });
@@ -134,19 +143,17 @@ app.use(globalErrorHandler);
 
 const port = process.env.PORT || 5000;
 
-// Conexión a MongoDB
-(async () => {
-  await connectBD(process.env.BD_URL!);
-  console.log("✅ MongoDB conectado");
-})();
-
 export default app;
 
 if (require.main === module) {
-  connectBD(process.env.BD_URL || '').then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
+  connectBD(process.env.BD_URL || '')
+    .then(() => {
+      app.listen(port, () => {
+        console.log(`Server is running on http://localhost:${port}`);
+      });
+    })
+    .catch((error) => {
+      console.error('Failed to start server:', error);
+      process.exit(1);
     });
-  });
 }
