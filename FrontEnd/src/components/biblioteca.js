@@ -97,7 +97,7 @@ export const Biblioteca = () => {
     maxSize,
     accept: ALLOWED_LIBRARY_ACCEPT,
     validator: (file) => {
-      const ext = extOf(file.name)
+      const ext = ext(file.name)
       if (!ALLOWED_EXTENSIONS.has(ext)) {
         return { code: 'file-invalid-type', message: 'Extensión no permitida' }
       }
@@ -487,6 +487,7 @@ export const Biblioteca = () => {
       <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
         <span className="text-gray-200">Biblioteca</span>
       </h1>
+
 
       {/* Nombre de carpeta actual */}
       <p className="text-xl text-white font-semibold flex items-center gap-2">
