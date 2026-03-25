@@ -133,7 +133,7 @@ const performSearch = () => {
   const isSearchMode = location.search.includes('search=true');
 
   return (
-    <div className="relative flex items-center gap-2 p-2 mb-4" ref={searchRef}>
+    <div className="relative flex items-center gap-2 p-4" ref={searchRef}>
       {/* Input de búsqueda */}
       <div className="relative flex-1 max-w-md">
         <input
@@ -204,6 +204,7 @@ const performSearch = () => {
       >
         Buscar
       </button>
+
     </div>
   );
 };
