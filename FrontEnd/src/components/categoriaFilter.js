@@ -41,7 +41,7 @@ export const CategoriaFilter = () => {
 
   return (
    <div className="flex justify-end  bg-blue-900"> {/* Contenedor padre */}
-    <div className="flex items-center gap-2 p-2 mb-4">
+    <div className="flex items-center  p-4">
       <label className="text-yellow-400  p-2 font-bold text-sm">Categorías</label>
       <select
         value={selectedCategoria}
