@@ -8,6 +8,8 @@ import FormularioPublicacion from '../pages/formulario';
 import { useAuth } from './context/AuthContext';
 import CategoriaFilter from './categoriaFilter';
 import BuscadorPublicaciones from './buscadorPublicaciones';
+import AlertaLimitePublicaciones from './AlertaLimitePublicaciones';
+import { API_URL } from '../utils/api';
 
 // Base de API robusta (evita /api/api)
 const RAW = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -28,6 +30,7 @@ export const Publicaciones = ({ tag: propTag }) => {
   const [tag, setTag] = useState(propTag);
   const limite = 12;
   const [formulario, setFormulario] = useState(false);
+  const [showLimitAlert, setShowLimitAlert] = useState(false);
 
   const { user } = useAuth();
   const [publicaciones, setPublicaciones] = useState([]);
@@ -142,6 +145,41 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
     obtenerPublicaciones(tag, newPage, limite, categoriaFilter, searchFilter);
   };
 
+  const verificarLimite = async () => {
+    try {
+      const response = await fetch(`${API_URL}/configuracion/mis-limites`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const limiteData = data.data;
+        // Si está en el límite o lo superó, retornar true
+        return limiteData.publicacionesActuales >= limiteData.limite;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error al verificar límite:', error);
+      return false;
+    }
+  };
+
+  const handleCrearPublicacion = async () => {
+    if (!user) {
+      navigate('/iniciarSesion');
+      return;
+    }
+
+    const limiteAlcanzado = await verificarLimite();
+    if (limiteAlcanzado) {
+      setShowLimitAlert(true);
+    } else {
+      setFormulario(true);
+    }
+  };
+
   return (
     <div className="bg-gray-800/80 pt-1 min-h-screen">
       <div className="relative">
@@ -233,11 +271,16 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
       </div>
 
       <button
-        onClick={() => { if (user) setFormulario(true); else navigate('/iniciarSesion'); }}
+        onClick={handleCrearPublicacion}
         className="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-yellow-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-lg hover:bg-yellow-700 transition-all duration-300 z-50 flex items-center justify-center text-2xl"
       >
         +
       </button>
+
+      <AlertaLimitePublicaciones
+        show={showLimitAlert}
+        onClose={() => setShowLimitAlert(false)}
+      />
 
       <FormularioPublicacion
         isOpen={formulario}

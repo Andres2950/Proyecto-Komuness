@@ -97,7 +97,7 @@ export const Biblioteca = () => {
     maxSize,
     accept: ALLOWED_LIBRARY_ACCEPT,
     validator: (file) => {
-      const ext = extOf(file.name)
+      const ext = ext(file.name)
       if (!ALLOWED_EXTENSIONS.has(ext)) {
         return { code: 'file-invalid-type', message: 'Extensión no permitida' }
       }
