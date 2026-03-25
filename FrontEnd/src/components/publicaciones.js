@@ -2,14 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { IoMdArrowRoundBack } from "react-icons/io";
+import { API_URL } from "../utils/api";
 import '../CSS/publicaciones.css';
 import PublicacionCard from './publicacionCard';
 import FormularioPublicacion from '../pages/formulario';
+import PublicacionModal from './publicacionModal';
 import { useAuth } from './context/AuthContext';
 import CategoriaFilter from './categoriaFilter';
 import BuscadorPublicaciones from './buscadorPublicaciones';
 import AlertaLimitePublicaciones from './AlertaLimitePublicaciones';
 import { API_URL } from '../utils/api';
+import LimitePublicaciones from "./limiteDePublicaciones";
 
 // Base de API robusta (evita /api/api)
 const RAW = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -25,8 +28,6 @@ export const Publicaciones = ({ tag: propTag }) => {
   const [cards, setCards] = useState([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [categoriaFilter, setCategoriaFilter] = useState(null);
-  const [searchFilter, setSearchFilter] = useState(null);
   const [tag, setTag] = useState(propTag);
   const limite = 12;
   const [formulario, setFormulario] = useState(false);
@@ -35,14 +36,13 @@ export const Publicaciones = ({ tag: propTag }) => {
   const { user } = useAuth();
   const [publicaciones, setPublicaciones] = useState([]);
 
-  useEffect(() => {
-    const categoriaId = searchParams.get('categoria');
-    const searchTerm = searchParams.get('q');
-    const isSearch = searchParams.get('search') === 'true';
-    
-    setCategoriaFilter(categoriaId);
-    setSearchFilter(isSearch ? searchTerm : null);
-  }, [searchParams]);
+  const categoriaFilter = searchParams.get('categoria');
+  const searchTerm = searchParams.get('q');
+  const isSearch = searchParams.get('search') === 'true';
+  const searchFilter = isSearch ? searchTerm : null;
+  const [limiteData, setLimiteData] = useState(null);
+
+  const [selectedPub, setSelectedPub] = useState(null);
 
   useEffect(() => {
     const path = location.pathname;
@@ -59,9 +59,6 @@ export const Publicaciones = ({ tag: propTag }) => {
     }
 
     setTag(newTag);
-    setPublicaciones([]);
-    setPaginaActual(1);
-    setTotalPaginas(1);
   }, [location.pathname, propTag]);
 
   useEffect(() => {
@@ -81,6 +78,30 @@ export const Publicaciones = ({ tag: propTag }) => {
     }
   }, [mostrar, publicaciones]);
 
+  useEffect(() => {
+    if (user) {
+      cargarDatosLimite();
+    }
+  }, [user]);
+
+  // Función para cargar datos del límite de publicaciones del usuario
+  const cargarDatosLimite = async () => {
+
+    try {
+      const response = await fetch(`${API_URL}/configuracion/mis-limites`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLimiteData(data.data);
+      }
+    } catch (error) {
+      console.error("Error al cargar datos de límite:", error);
+    }
+  };
   
 const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId = null, searchTerm = null) => {
   try {
@@ -181,7 +202,7 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
   };
 
   return (
-    <div className="bg-gray-800/80 pt-1 min-h-screen">
+    <div className="bg-gray-800/80 min-h-screen">
       <div className="relative">
         {/* Contenedor para filtros y buscador */}
         <div className="bg-blue-900">
@@ -189,24 +210,20 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
             {/* Buscador */}
             <BuscadorPublicaciones />
             
+            {limiteData && (tag === 'publicacion') && (
+            <div className="flex-1 flex justify-center p-4">
+              <div className="w-full max-w-md">
+                <LimitePublicaciones limiteData={limiteData} />
+              </div>
+            </div>
+          )}
+
             {/* Filtro de categorías */}
             <div className="md:ml-auto">
               <CategoriaFilter />
             </div>
           </div>
         </div>
-
-        {mostrarBotonVolver() && (
-          <div className="absolute top-4 left-10 z-20">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
-            >
-              <IoMdArrowRoundBack color="black" size={21} />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Mensaje de búsqueda */}
@@ -231,11 +248,20 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
           </p>
         ) : (
           cards.map((publicacion) => (
-            <PublicacionCard key={publicacion._id} publicacion={publicacion} />
+            <PublicacionCard key={publicacion._id} publicacion={publicacion} onDeleteClick={(pub) => setSelectedPub(pub)}/>
           ))
         )}
       </div>
-
+      
+      <PublicacionModal
+        name={selectedPub?.titulo}
+        date={selectedPub?.fecha}
+        tag={selectedPub?.tag}
+        id={selectedPub?._id}
+        isOpen={!!selectedPub}
+         onClose={() => setSelectedPub(null)}
+      />
+      
       <div className="w-full flex justify-center mt-6 gap-2 flex-wrap pb-6">
         {paginaActual > 1 && (
           <button

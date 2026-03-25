@@ -483,23 +483,11 @@ export const Biblioteca = () => {
 
   return (
     <div className="flex flex-col items-center gap-4 bg-gray-800/80 pt-16 min-h-screen p-4 sm:p-8">
-      {/* Botón de volver */}
-      {mostrarBotonVolver() && (
-        <div className="absolute top-22 left-11 z-20">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
-          >
-            <IoMdArrowRoundBack color="black" size={25} />
-          </button>
-        </div>
-      )}
-
       {/* Título */}
       <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
         <span className="text-gray-200">Biblioteca</span>
       </h1>
+
 
       {/* Nombre de carpeta actual */}
       <p className="text-xl text-white font-semibold flex items-center gap-2">
@@ -657,6 +645,12 @@ export const Biblioteca = () => {
                     handleOpenModal(doc)
                   }
                 }}
+		onContextMenu={(e) => {
+		    e.preventDefault();
+		    if(doc.tag === 'carpeta'){
+			handleOpenModal(doc)
+		    }
+		}}
               />
             ))}
           </div>
