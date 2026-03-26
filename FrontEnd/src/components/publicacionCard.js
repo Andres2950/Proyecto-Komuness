@@ -4,7 +4,7 @@ import PublicacionModal from "./publicacionModal";
 import { useAuth } from "./context/AuthContext";
 import CategoriaBadge from "./categoriaBadge";
 import ProfileErrorModal from "./ProfileErrorModal"; 
-import { API_URL, BASE_URL } from '../utils/api';
+import { API_URL } from '../utils/api';
 
 export const PublicacionCard = ({ publicacion }) => {
    // ========== FUNCIÓN FORMATFECHA CORREGIDA ==========

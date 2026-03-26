@@ -1,4 +1,4 @@
-import { IComentario, IPublicacion, IEnlaceExterno, IEditHistory, IPublicacionUpdate } from "@/interfaces/publicacion.interface";
+import { IComentario, IPublicacion, IEnlaceExterno, IEditHistory, IPublicacionUpdate, IUbicacion } from "@/interfaces/publicacion.interface";
 import { IAdjunto } from "@/interfaces/publicacion.interface";
 import { model, Schema } from 'mongoose';
 
@@ -20,6 +20,13 @@ const enlaceExternoSchema = new Schema<IEnlaceExterno>({
   url: { type: String, required: true }
 });
 
+const ubicacionSchema = new Schema<IUbicacion>({
+  latitude: { type: Number, required: true },
+  longitude: { type: Number, required: true },
+  direccion: { type: String, required: true },
+  mapLink: { type: String, required: true }
+}, { _id: false });
+
 
 const publicacionUpdateSchema = new Schema<IPublicacionUpdate>({
   titulo: { type: String, required: false },
@@ -31,6 +38,7 @@ const publicacionUpdateSchema = new Schema<IPublicacionUpdate>({
   precioCiudadanoOro: { type: Number, required: false },
   enlacesExternos: { type: [enlaceExternoSchema], required: false },
   telefono: { type: String, required: false },
+  ubicacion: { type: ubicacionSchema, required: false },
   categoria: { type: Schema.Types.ObjectId, ref: 'Categoria', required: false },
   adjunto: { type: [adjuntoSchema], required: false },
   requestedAt: { type: String, required: true },
@@ -73,6 +81,7 @@ const publicacionSchema = new Schema(
     precioCiudadanoOro: { type: Number, required: false }, 
     enlacesExternos: { type: [enlaceExternoSchema], required: false },
     telefono: { type: String, required: false },
+    ubicacion: { type: ubicacionSchema, required: false }, // Ubicación del evento
 
     // categorías de área
     categoria: { type: Schema.Types.ObjectId, ref: 'Categoria', required: true },

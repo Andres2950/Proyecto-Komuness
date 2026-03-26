@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL, BASE_URL, PROFESIONALES_API_URL } from '../utils/api'; // AGREGAR PROFESIONALES_API_URL
+import { BASE_URL, PROFESIONALES_API_URL } from '../utils/api'; // AGREGAR PROFESIONALES_API_URL
 import { useAuth } from './context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { 
@@ -236,7 +236,6 @@ const quitarDelBanco = async (perfilId) => {
             <div key={profesional._id} className="profesional-card">
               {/* Foto de perfil */}
               <div className="card-header">
-                // En la parte del avatar, reemplaza con esto:
                 <div className="avatar-container">
                 {profesional.fotoPerfil ? (
                     <img 

@@ -17,6 +17,7 @@ export interface IPublicacion {
   precioCiudadanoOro?: number;   
   enlacesExternos?: IEnlaceExterno[]; 
   telefono?: string;            
+  ubicacion?: IUbicacion; // Ubicación del evento
   categoria: string | Types.ObjectId;
 
   // NUEVOS CAMPOS PARA CONTROL DE EDICIONES
@@ -53,6 +54,13 @@ export interface IEnlaceExterno {
     url: string;
 }
 
+export interface IUbicacion {
+    latitude: number;
+    longitude: number;
+    direccion: string; // Dirección legible (ej: "Avenida Central, San José, Costa Rica")
+  mapLink: string; // Link directo al mapa (OpenStreetMap)
+}
+
 
 export interface IPublicacionUpdate {
   titulo?: string;
@@ -64,6 +72,7 @@ export interface IPublicacionUpdate {
   precioCiudadanoOro?: number;
   enlacesExternos?: IEnlaceExterno[];
   telefono?: string;
+  ubicacion?: IUbicacion; // Ubicación del evento para actualización
   categoria?: string | Types.ObjectId;  // ← Permitir ambos tipos
   adjunto?: IAdjunto[];
   requestedAt: string;
