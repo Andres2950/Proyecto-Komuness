@@ -167,4 +167,20 @@ footer a[href^="mailto:"] {
   footer a[aria-label]:hover {
     transform: none;
   }
+  .footer-bottom .legal-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .footer-bottom .legal-link {
+    font-size: 0.95rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    letter-spacing: 0.1px;
+  }
+
+  .footer-bottom .legal-link:hover {
+    transform: translateY(-1px);
+  }
 }

@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { IoMdArrowRoundBack } from "react-icons/io";
-import { API_URL } from "../utils/api";
 import '../CSS/publicaciones.css';
 import PublicacionCard from './publicacionCard';
 import FormularioPublicacion from '../pages/formulario';
