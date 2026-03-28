@@ -11,7 +11,6 @@ import CategoriaFilter from './categoriaFilter';
 import BuscadorPublicaciones from './buscadorPublicaciones';
 import AlertaLimitePublicaciones from './AlertaLimitePublicaciones';
 import { API_URL } from '../utils/api';
-import LimitePublicaciones from "./limiteDePublicaciones";
 
 // Base de API robusta (evita /api/api)
 const RAW = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -39,8 +38,7 @@ export const Publicaciones = ({ tag: propTag }) => {
   const searchTerm = searchParams.get('q');
   const isSearch = searchParams.get('search') === 'true';
   const searchFilter = isSearch ? searchTerm : null;
-  const [limiteData, setLimiteData] = useState(null);
-
+  
   const [selectedPub, setSelectedPub] = useState(null);
 
   useEffect(() => {
@@ -76,31 +74,6 @@ export const Publicaciones = ({ tag: propTag }) => {
       setCards(newCards);
     }
   }, [mostrar, publicaciones]);
-
-  useEffect(() => {
-    if (user) {
-      cargarDatosLimite();
-    }
-  }, [user]);
-
-  // Función para cargar datos del límite de publicaciones del usuario
-  const cargarDatosLimite = async () => {
-
-    try {
-      const response = await fetch(`${API_URL}/configuracion/mis-limites`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLimiteData(data.data);
-      }
-    } catch (error) {
-      console.error("Error al cargar datos de límite:", error);
-    }
-  };
   
 const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId = null, searchTerm = null) => {
   try {
@@ -192,6 +165,13 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
       return;
     }
 
+    // Bypass inmediato para admin/superadmin
+    const tipoUsuario = Number(user?.tipoUsuario);
+    if (tipoUsuario === 0 || tipoUsuario === 1) {
+      setFormulario(true);
+      return;
+    }
+
     const limiteAlcanzado = await verificarLimite();
     if (limiteAlcanzado) {
       setShowLimitAlert(true);
@@ -208,14 +188,6 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             {/* Buscador */}
             <BuscadorPublicaciones />
-            
-            {limiteData && (tag === 'publicacion') && (
-            <div className="flex-1 flex justify-center p-4">
-              <div className="w-full max-w-md">
-                <LimitePublicaciones limiteData={limiteData} />
-              </div>
-            </div>
-          )}
 
             {/* Filtro de categorías */}
             <div className="md:ml-auto">
