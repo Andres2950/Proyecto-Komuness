@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -116,6 +107,14 @@ const globalErrorHandler = (err, _req, res, _next) => {
         });
         return;
     }
+    if (err && typeof err.message === 'string' && err.message.includes('Tipo de archivo no permitido')) {
+        res.status(400).json({
+            success: false,
+            message: err.message,
+            errorCode: 'INVALID_FILE_TYPE'
+        });
+        return;
+    }
     if (err) {
         console.error('Unhandled error middleware:', err);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
@@ -124,17 +123,16 @@ const globalErrorHandler = (err, _req, res, _next) => {
 };
 app.use(globalErrorHandler);
 const port = process.env.PORT || 5000;
-// Conexión a MongoDB
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    yield (0, mongodb_1.connectBD)(process.env.BD_URL);
-    console.log("✅ MongoDB conectado");
-}))();
 exports.default = app;
 if (require.main === module) {
-    (0, mongodb_1.connectBD)(process.env.BD_URL || '').then(() => {
-        console.log('Connected to MongoDB');
+    (0, mongodb_1.connectBD)(process.env.BD_URL || '')
+        .then(() => {
         app.listen(port, () => {
             console.log(`Server is running on http://localhost:${port}`);
         });
+    })
+        .catch((error) => {
+        console.error('Failed to start server:', error);
+        process.exit(1);
     });
 }

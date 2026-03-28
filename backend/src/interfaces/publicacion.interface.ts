@@ -4,6 +4,7 @@ export interface IPublicacion {
   _id?: string;
   titulo: string;
   contenido: string;
+  contenidoBreve: string;
   autor: string | Types.ObjectId;  
   fecha: string;
   adjunto?: IAdjunto[];
@@ -60,6 +61,7 @@ export interface IEnlaceExterno {
 export interface IPublicacionUpdate {
   titulo?: string;
   contenido?: string;
+  contenidoBreve?: string;
   fechaEvento?: string;
   horaEvento?: string;
   precio?: number;

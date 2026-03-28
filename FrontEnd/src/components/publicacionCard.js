@@ -256,7 +256,12 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
                   publicacion.tag !== "emprendimiento" && (
                   <div className="card-details">
                       <h3 className="titulo">{publicacion.titulo}</h3>
-                      <p className="fecha">
+                     
+		     <div className="tweet-content mb-2">
+                      <p className="text-gray-700">{publicacion.contenidoBreve}</p>
+                     </div>
+ 
+		     <p className="fecha">
                       Publicado por:{" "}
                       <span
                         className="text-white hover:text-blue-100 cursor-pointer hover:underline"
@@ -276,24 +281,32 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
               {publicacion.tag === "publicacion" && (
                   <div className="tweet">
                   <div className="tweet-header mb-2">
-                      <div className="tweet-user">
+                  <div className="tweet-title">
                       <h4
-                        className="user-name font-semibold text-white hover:text-blue-100 cursor-pointer hover:underline"
-                        onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
-                      >
-                          {publicacion.autor?.nombre || "Desconocido"}
+                        className="title font-semibold text-white"
+		      >
+                          {publicacion.titulo || "Sin título"}
                       </h4>
                       </div>
                   </div>
                   <div className="tweet-content mb-2">
-                      <p className="text-gray-700">{publicacion.titulo}</p>
+                      <p className="text-gray-700">{publicacion.contenidoBreve}</p>
                   </div>
-                  <div className="tweet-footer mt-2">
-                      <p className="tweet-date text-sm text-gray-600">
-                      Publicado el {formatFecha(publicacion.fecha)}
-                      </p>
-              </div>      
+		  <div className="tweet-footer mt-2">
+                    <div className="tweet-user">
+                      <h4
+                        className="user-name text-white hover:text-blue-100 cursor-pointer hover:underline"
+                        onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
+                      >
+                          Publicado por: <b>{publicacion.autor?.nombre || "Desconocido"} </b>
+                      </h4>
+                    </div>
+                    <p className="tweet-date text-sm text-gray-600">
+                     Fecha: {formatFecha(publicacion.fecha)}
+                    </p>
+                  </div>      
                   </div>
+
               )}
               </div>
           </div>

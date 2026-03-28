@@ -24,6 +24,7 @@ const enlaceExternoSchema = new Schema<IEnlaceExterno>({
 const publicacionUpdateSchema = new Schema<IPublicacionUpdate>({
   titulo: { type: String, required: false },
   contenido: { type: String, required: false },
+  contenidoBreve: { type: String, required: false },
   fechaEvento: { type: String, required: false },
   horaEvento: { type: String, required: false },
   precio: { type: Number, required: false },
@@ -60,6 +61,7 @@ const publicacionSchema = new Schema(
   {
     titulo: { type: String, required: true },
     contenido: { type: String, required: true },
+    contenidoBreve: { type: String, required: true },
     // id del autor
     autor: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
     fecha: { type: String, required: true },

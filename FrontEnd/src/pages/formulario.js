@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import CategoriaSelector from '../components/categoriaSelector';
 import AlertaLimitePublicaciones from '../components/AlertaLimitePublicaciones';
 import '../CSS/formularioPublicacion.css';
+import TextAreaComponent from '../components/TextAreaComponent';
 
 export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
   const valoresIniciales = {
     titulo: "",
     contenido: "",
+    contenidoBreve: "",
     autor: "",
     fecha: new Date().toLocaleDateString(),
     archivos: [],
@@ -42,6 +44,7 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
       setFormData({ 
         titulo: "",
         contenido: "",
+	contenidoBreve: "",
         autor: "",
         fecha: new Date().toLocaleDateString(),
         archivos: [],
@@ -123,6 +126,7 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     const data = new FormData();
     data.append("titulo", formData.titulo);
     data.append("contenido", formData.contenido);
+    data.append("contenidoBreve", formData.contenidoBreve);
     data.append("fecha", formData.fecha);
     data.append("tag", formData.tag);
     data.append("publicado", String(formData.publicado));
@@ -269,6 +273,20 @@ return (
                 className="campo-textarea"
                 placeholder={`Descripción del evento`}
                 rows="4"
+                required
+              />
+            </div>
+	    {/* Descripción corta*/}
+            <div className="campo-grupo">
+              <label className="campo-label">Descripción breve:</label>
+              <TextAreaComponent
+                name="contenidoBreve"
+                value={formData.contenidoBreve}
+                onChange={handleChange}
+                className="campo-textarea small"
+                placeholder={`Descripción breve`}
+		limit={100}
+                rows={2}
                 required
               />
             </div>

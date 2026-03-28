@@ -196,7 +196,7 @@ async function getAdminEmails(): Promise<string[]> {
 export const createPublicacion = async (req: Request, res: Response): Promise<void> => {
   try {
     const body = req.body as IPublicacion & Record<string, any>;
-
+	
     // 🔴 Autor siempre desde el token
     const userId = (req as any).user?._id;
     if (!userId) {
