@@ -20,6 +20,7 @@ import PerfilPublico from './PerfilPublico';
 import EditarPerfil from './EditarPerfil';
 import BancoProfesionales from './BancoProfesionales';
 import TerminosCondiciones from './TerminosCondiciones'; // NUEVO
+import Tutoriales from "./tutoriales"; // NUEVO
 
 export const Rutas = () =>{
     
@@ -46,6 +47,7 @@ export const Rutas = () =>{
                 <Route path="/mi-perfil/editar" element={<EditarPerfil />} />
                 <Route path="/profesionales" element={<BancoProfesionales />} />
                 <Route path="/terminos-y-condiciones" element={<TerminosCondiciones />} /> {/* NUEVO */}
+                <Route path="/tutoriales" element={<Tutoriales />} /> {/* NUEVO */}
 
                 <Route path="*" element={<Navigate to="/publicaciones" />} />
             </Routes>

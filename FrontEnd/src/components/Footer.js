@@ -68,6 +68,7 @@ const Footer = () => {
                   Emprendimientos
                 </button>
               </li>
+
             </ul>
           </div>
 
@@ -136,6 +137,16 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+          
+          <div className="legal-links mb-3">
+            <button
+              onClick={() => handleNavigation('/tutoriales')}
+              className="footer-link legal-link text-gray-300 hover:text-white transition-colors duration-200"
+            >
+              Tutoriales
+            </button>
+          </div>
+
           <div className="legal-links mb-3">
             <button
               onClick={() => handleNavigation('/terminos-y-condiciones')}
