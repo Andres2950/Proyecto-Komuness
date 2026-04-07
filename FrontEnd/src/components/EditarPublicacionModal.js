@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { IoMdClose, IoMdRemove, IoMdAdd } from "react-icons/io";
-import { useAuth } from "./context/AuthContext";
 import { API_URL } from "../utils/api";
 import { toast } from "react-hot-toast";
 import CategoriaSelector from '../components/categoriaSelector';
 import '../CSS/formularioPublicacion.css';
 
 export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate }) => {
-  const { user } = useAuth();
   const [formData, setFormData] = useState({
     titulo: "",
     contenido: "",
@@ -128,6 +126,7 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
     setCargando(true);
 
     try {
+
       // Crear objeto plano primero para debugging
       const datosActualizacion = {
         titulo: formData.titulo,
@@ -167,11 +166,11 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
       data.append("imagenesMantenidas", JSON.stringify(imagenesMantenidas));
 
       // Nuevas imágenes como archivos
-      nuevasImagenes.forEach((archivo, index) => {
+      nuevasImagenes.forEach((archivo) => {
         data.append("archivos", archivo);
       });
 
-      for (let [key, value] of data.entries()) {
+      for (const [key] of data.entries()) {
         if (key === 'archivos') {
           console.log('Bien');
         } else {

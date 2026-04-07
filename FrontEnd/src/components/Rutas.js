@@ -5,8 +5,7 @@ import {PerfilUsuario} from './perfilUsuario'
 import {PublicacionDetalle} from './publicacionDetalle'
 import {Navbar} from './navbar'
 import {Biblioteca} from './biblioteca'
-    
-import FormularioPublicacion from "../pages/formulario";
+
 import {IniciarSesion} from './iniciarSesion'
 import {RecuperarContra} from './recuperarContra'
 import {NuevaContra} from './nuevaContra'

@@ -1,17 +1,22 @@
 import { useState, useEffect } from "react";
 import { IoMdClose, IoMdRemove, IoMdAdd } from "react-icons/io";
-import { useAuth } from "../components/context/AuthContext";
 import { API_URL } from "../utils/api";
 import { toast } from "react-hot-toast";
 import CategoriaSelector from '../components/categoriaSelector';
 import AlertaLimitePublicaciones from '../components/AlertaLimitePublicaciones';
 import '../CSS/formularioPublicacion.css';
+import MapaUbicacion from '../components/MapaUbicacion';
 import TextAreaComponent from '../components/TextAreaComponent';
 
 export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
-  const { user } = useAuth();
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
   const [enlacesExternos, setEnlacesExternos] = useState([{ nombre: '', url: '' }]);
+  const [ubicacion, setUbicacion] = useState({
+    latitude: 9.7489,
+    longitude: -83.7534,
+    direccion: 'San José, Costa Rica',
+    mapLink: 'https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534'
+  });
 
   const valoresIniciales = {
     titulo: "",
@@ -62,6 +67,12 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
         categoria: "",
       });
       setEnlacesExternos([{ nombre: '', url: '' }]);
+          setUbicacion({
+            latitude: 9.7489,
+            longitude: -83.7534,
+            direccion: 'San José, Costa Rica',
+            mapLink: 'https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534'
+          });
     }
   }, [isOpen, openTag]); 
 
@@ -139,6 +150,11 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
     data.append("telefono", formData.telefono || "");
     data.append("categoria", formData.categoria || "");
+    
+    // Agregar ubicación como JSON si es un evento
+    if (formData.tag === "evento" && ubicacion) {
+      data.append("ubicacion", JSON.stringify(ubicacion));
+    }
 
       // Agregar enlaces externos como JSON
     if (enlacesValidos.length > 0) {
@@ -506,6 +522,14 @@ return (
                     onChange={handleChange}
                     className="campo-input"
                     required
+                  />
+                </div>
+
+                {/* Mapa para seleccionar ubicación del evento */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <MapaUbicacion
+                    onLocationSelect={setUbicacion}
+                    initialLocation={ubicacion}
                   />
                 </div>
               </>
