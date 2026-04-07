@@ -8,7 +8,7 @@ import { useAuth } from "./context/AuthContext";
 import ModalCambioContrasena from "./modalCambioContra";
 import { Link } from "react-router-dom";
 import { FaListAlt, FaEdit, FaHistory } from "react-icons/fa";
-import { FiSettings, FiCreditCard, FiDollarSign } from "react-icons/fi";
+import { FiSettings, FiCreditCard } from "react-icons/fi";
 import ModalLimitesPublicaciones from "./modalLimitesPublicaciones";
 import ModalConfiguracionPagos from "./ModalConfiguracionPagos";
 import AlertaLimitePublicaciones from "./AlertaLimitePublicaciones";
@@ -27,8 +27,8 @@ export const PerfilUsuario = () => {
   const [modalPremiumAbierto, setModalPremiumAbierto] = useState(false);
   const [activeTab, setActiveTab] = useState("publicaciones");
   const [limiteData, setLimiteData] = useState(null);
-  const [perfilExistente, setPerfilExistente] = useState(false); 
-  const [perfilPublico, setPerfilPublico] = useState(false);
+  const [, setPerfilExistente] = useState(false); 
+  const [, setPerfilPublico] = useState(false);
 
   
   useEffect(() => {
@@ -211,6 +211,7 @@ export const PerfilUsuario = () => {
       }
     };
     loader();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Función para recargar datos cuando se cambia de pestaña
@@ -222,6 +223,7 @@ export const PerfilUsuario = () => {
         cargarActualizacionesPendientes();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, user]);
 
   const aceptarPost = async (id) => {

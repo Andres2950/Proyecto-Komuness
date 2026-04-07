@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { IPublicacion, IPublicacionUpdate, IEditHistory, IEnlaceExterno, IAdjunto } from '../interfaces/publicacion.interface';
+import { IPublicacion, IPublicacionUpdate, IEditHistory, IEnlaceExterno, IAdjunto, IUbicacion } from '../interfaces/publicacion.interface';
 import { modelPublicacion } from '../models/publicacion.model';
 import mongoose from 'mongoose';
 import { saveMulterFileToGridFS } from '../utils/gridfs';
@@ -91,6 +91,12 @@ export const requestUpdatePublicacion = async (req: Request, res: Response): Pro
       if (precioCiudadanoOro !== undefined) updateData.precioCiudadanoOro = precioCiudadanoOro;
     }
 
+    // Procesar ubicación
+    if (req.body.ubicacion !== undefined) {
+      const ubicacion = parseUbicacion(req.body.ubicacion);
+      if (ubicacion !== undefined) {
+        updateData.ubicacion = ubicacion;
+      }
     if (publicacion.tag === 'emprendimiento' && updateData.precioNegociable === true) {
       updateData.precio = undefined;
       updateData.precioEstudiante = undefined;
@@ -622,6 +628,40 @@ function parsePrecio(input: any): number | undefined {
   return undefined;
 }
 
+// Función auxiliar para parsear ubicación
+function parseUbicacion(input: any): IUbicacion | undefined {
+  if (!input) return undefined;
+  try {
+    let ubicacion: any;
+    
+    // Si es string (JSON), parsear
+    if (typeof input === 'string') {
+      ubicacion = JSON.parse(input);
+    } else {
+      ubicacion = input;
+    }
+    
+    // Validar que tenga los campos necesarios
+    if (!ubicacion || typeof ubicacion !== 'object') return undefined;
+    
+    const lat = Number(ubicacion.latitude);
+    const lng = Number(ubicacion.longitude);
+    const dir = String(ubicacion.direccion).trim();
+    
+    // Validar rango de coordenadas válidas
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) return undefined;
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) return undefined;
+    if (dir.length === 0 || dir.length > 500) return undefined;
+    
+    return {
+      latitude: lat,
+      longitude: lng,
+      direccion: dir,
+      mapLink: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`
+    };
+  } catch {
+    return undefined;
+  }
 function parseBoolean(input: any): boolean | undefined {
   if (input === undefined || input === null || input === '') return undefined;
   if (typeof input === 'boolean') return input;

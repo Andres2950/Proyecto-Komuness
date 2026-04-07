@@ -1,7 +1,7 @@
 // src/controllers/publicacion.controller.ts
 
 import { Request, Response } from 'express';
-import { IAdjunto, IComentario, IEnlaceExterno, IPublicacion } from '../interfaces/publicacion.interface';
+import { IAdjunto, IComentario, IEnlaceExterno, IPublicacion, IUbicacion } from '../interfaces/publicacion.interface';
 import { modelPublicacion } from '../models/publicacion.model';
 import mongoose from 'mongoose';
 import { saveMulterFileToGridFS, saveBufferToGridFS, deleteGridFSFile } from '../utils/gridfs';
@@ -176,6 +176,42 @@ function parseHoraEvento(input: any): string | undefined {
   return /^\d{2}:\d{2}$/.test(t) ? t : undefined;
 }
 
+// función para validar ubicación
+function parseUbicacion(input: any): IUbicacion | undefined {
+  if (!input) return undefined;
+  try {
+    let ubicacion: any;
+    
+    // Si es string (JSON), parsear
+    if (typeof input === 'string') {
+      ubicacion = JSON.parse(input);
+    } else {
+      ubicacion = input;
+    }
+    
+    // Validar que tenga los campos necesarios
+    if (!ubicacion || typeof ubicacion !== 'object') return undefined;
+    
+    const lat = Number(ubicacion.latitude);
+    const lng = Number(ubicacion.longitude);
+    const dir = String(ubicacion.direccion).trim();
+    
+    // Validar rango de coordenadas válidas
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) return undefined;
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) return undefined;
+    if (dir.length === 0 || dir.length > 500) return undefined;
+    
+    return {
+      latitude: lat,
+      longitude: lng,
+      direccion: dir,
+      mapLink: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 // ───────────────────────────────────────────────────────────────────────────────
 // Helper: correos de admins (tipoUsuario = 1) con email válido
 // ───────────────────────────────────────────────────────────────────────────────
@@ -212,6 +248,7 @@ export const createPublicacion = async (req: Request, res: Response): Promise<vo
     const horaEvento = parseHoraEvento(body.horaEvento);
     const telefono = parseTelefono(body.telefono);
     const enlacesExternos = parseEnlacesExternos(body.enlacesExternos);
+    const ubicacion = parseUbicacion(body.ubicacion);
     const monedaData = getMonedaData(body.moneda, body.monedaSimbolo);
 
       const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
@@ -233,6 +270,7 @@ export const createPublicacion = async (req: Request, res: Response): Promise<vo
       horaEvento,
       telefono,
       enlacesExternos,
+      ubicacion,
     } as IPublicacion;
 
     const nuevaPublicacion = new modelPublicacion(publicacion);
@@ -312,6 +350,7 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
     const horaEvento = parseHoraEvento((publicacion as any).horaEvento);
     const telefono = parseTelefono((publicacion as any).telefono);
     const enlacesExternos = parseEnlacesExternos((publicacion as any).enlacesExternos);
+    const ubicacion = parseUbicacion((publicacion as any).ubicacion);
     const monedaData = getMonedaData((publicacion as any).moneda, (publicacion as any).monedaSimbolo);
 
       const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
@@ -346,6 +385,7 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
       horaEvento,
       telefono,
       enlacesExternos,
+      ubicacion,
     });
 
 

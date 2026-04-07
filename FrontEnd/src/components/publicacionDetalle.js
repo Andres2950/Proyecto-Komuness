@@ -195,7 +195,7 @@ export const PublicacionDetalle = () => {
     if (url.includes('@') && !url.startsWith('mailto:')) {
       return `mailto:${url}`;
     }
-    if (/^[\d\s\-\+\(\)]+$/.test(url.replace(/\s/g, '')) && !url.startsWith('tel:')) {
+    if (/^[\d\s\-+()]+$/.test(url.replace(/\s/g, '')) && !url.startsWith('tel:')) {
       return `tel:${url}`;
     }
     if (!url.startsWith('http://') && !url.startsWith('https://') && 
@@ -210,7 +210,7 @@ export const PublicacionDetalle = () => {
     if (url.includes('@') || url.startsWith('mailto:')) {
       return <IoMdMail className="publicacion-icon" size={14} />;
     }
-    if (url.includes('tel:') || /^[\d\s\-\+\(\)]+$/.test(url.replace(/\s/g, ''))) {
+    if (url.includes('tel:') || /^[\d\s\-+()]+$/.test(url.replace(/\s/g, ''))) {
       return <IoMdCall className="publicacion-icon" size={14} />;
     }
     if (url.includes('facebook.com')) {
@@ -433,6 +433,24 @@ export const PublicacionDetalle = () => {
                   <div className="publicacion-info-item">
                     <span className="publicacion-info-label">Hora del evento:</span>
                     <span className="publicacion-info-value">{publicacion.horaEvento}</span>
+                  </div>
+                )}
+
+                {/* Ubicación del evento */}
+                {publicacion?.ubicacion && (
+                  <div className="publicacion-info-item">
+                    <span className="publicacion-info-label">Ubicación:</span>
+                    <div className="publicacion-info-value">
+                      <div>{publicacion.ubicacion.direccion}</div>
+                      <a
+                        href={publicacion.ubicacion.mapLink || `https://www.openstreetmap.org/?mlat=${publicacion.ubicacion.latitude}&mlon=${publicacion.ubicacion.longitude}#map=16/${publicacion.ubicacion.latitude}/${publicacion.ubicacion.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-300 hover:text-blue-200 underline"
+                      >
+                        Ver en mapa
+                      </a>
+                    </div>
                   </div>
                 )}
                  
