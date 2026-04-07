@@ -82,6 +82,9 @@ export const BuscadorPublicaciones = () => {
 
   // Realizar búsqueda completa - USANDO FILTRO EXISTENTE
   // En buscadorPublicaciones.js - actualiza performSearch
+	//
+
+// Objetivo: Actualiza la URL con los parametros de busqueda
 const performSearch = () => {
   if (!searchTerm.trim()) {
     handleClearSearch();
@@ -130,12 +133,7 @@ const performSearch = () => {
   const isSearchMode = location.search.includes('search=true');
 
   return (
-    <div className="relative flex items-center gap-2 p-2 mb-4" ref={searchRef}>
-      {/* Label */}
-      <label className="text-yellow-400 p-2 font-bold text-sm whitespace-nowrap">
-        Buscar
-      </label>
-      
+    <div className="relative flex items-center gap-2 p-4" ref={searchRef}>
       {/* Input de búsqueda */}
       <div className="relative flex-1 max-w-md">
         <input
@@ -206,6 +204,7 @@ const performSearch = () => {
       >
         Buscar
       </button>
+
     </div>
   );
 };

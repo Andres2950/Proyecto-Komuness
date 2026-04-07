@@ -5,9 +5,12 @@ import { IoMdArrowRoundBack } from "react-icons/io";
 import '../CSS/publicaciones.css';
 import PublicacionCard from './publicacionCard';
 import FormularioPublicacion from '../pages/formulario';
+import PublicacionModal from './publicacionModal';
 import { useAuth } from './context/AuthContext';
 import CategoriaFilter from './categoriaFilter';
 import BuscadorPublicaciones from './buscadorPublicaciones';
+import AlertaLimitePublicaciones from './AlertaLimitePublicaciones';
+import { API_URL } from '../utils/api';
 
 // Base de API robusta (evita /api/api)
 const RAW = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -23,23 +26,20 @@ export const Publicaciones = ({ tag: propTag }) => {
   const [cards, setCards] = useState([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [categoriaFilter, setCategoriaFilter] = useState(null);
-  const [searchFilter, setSearchFilter] = useState(null);
   const [tag, setTag] = useState(propTag);
   const limite = 12;
   const [formulario, setFormulario] = useState(false);
+  const [showLimitAlert, setShowLimitAlert] = useState(false);
 
   const { user } = useAuth();
   const [publicaciones, setPublicaciones] = useState([]);
 
-  useEffect(() => {
-    const categoriaId = searchParams.get('categoria');
-    const searchTerm = searchParams.get('q');
-    const isSearch = searchParams.get('search') === 'true';
-    
-    setCategoriaFilter(categoriaId);
-    setSearchFilter(isSearch ? searchTerm : null);
-  }, [searchParams]);
+  const categoriaFilter = searchParams.get('categoria');
+  const searchTerm = searchParams.get('q');
+  const isSearch = searchParams.get('search') === 'true';
+  const searchFilter = isSearch ? searchTerm : null;
+  
+  const [selectedPub, setSelectedPub] = useState(null);
 
   useEffect(() => {
     const path = location.pathname;
@@ -56,9 +56,6 @@ export const Publicaciones = ({ tag: propTag }) => {
     }
 
     setTag(newTag);
-    setPublicaciones([]);
-    setPaginaActual(1);
-    setTotalPaginas(1);
   }, [location.pathname, propTag]);
 
   useEffect(() => {
@@ -77,7 +74,6 @@ export const Publicaciones = ({ tag: propTag }) => {
       setCards(newCards);
     }
   }, [mostrar, publicaciones]);
-
   
 const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId = null, searchTerm = null) => {
   try {
@@ -142,33 +138,63 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
     obtenerPublicaciones(tag, newPage, limite, categoriaFilter, searchFilter);
   };
 
+  const verificarLimite = async () => {
+    try {
+      const response = await fetch(`${API_URL}/configuracion/mis-limites`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const limiteData = data.data;
+        // Si está en el límite o lo superó, retornar true
+        return limiteData.publicacionesActuales >= limiteData.limite;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error al verificar límite:', error);
+      return false;
+    }
+  };
+
+  const handleCrearPublicacion = async () => {
+    if (!user) {
+      navigate('/iniciarSesion');
+      return;
+    }
+
+    // Bypass inmediato para admin/superadmin
+    const tipoUsuario = Number(user?.tipoUsuario);
+    if (tipoUsuario === 0 || tipoUsuario === 1) {
+      setFormulario(true);
+      return;
+    }
+
+    const limiteAlcanzado = await verificarLimite();
+    if (limiteAlcanzado) {
+      setShowLimitAlert(true);
+    } else {
+      setFormulario(true);
+    }
+  };
+
   return (
-    <div className="bg-gray-800/80 pt-1 min-h-screen">
+    <div className="bg-gray-800/80 min-h-screen">
       <div className="relative">
         {/* Contenedor para filtros y buscador */}
         <div className="bg-blue-900">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             {/* Buscador */}
             <BuscadorPublicaciones />
-            
+
             {/* Filtro de categorías */}
             <div className="md:ml-auto">
               <CategoriaFilter />
             </div>
           </div>
         </div>
-
-        {mostrarBotonVolver() && (
-          <div className="absolute top-4 left-10 z-20">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
-            >
-              <IoMdArrowRoundBack color="black" size={21} />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Mensaje de búsqueda */}
@@ -193,11 +219,20 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
           </p>
         ) : (
           cards.map((publicacion) => (
-            <PublicacionCard key={publicacion._id} publicacion={publicacion} />
+            <PublicacionCard key={publicacion._id} publicacion={publicacion} onDeleteClick={(pub) => setSelectedPub(pub)}/>
           ))
         )}
       </div>
-
+      
+      <PublicacionModal
+        name={selectedPub?.titulo}
+        date={selectedPub?.fecha}
+        tag={selectedPub?.tag}
+        id={selectedPub?._id}
+        isOpen={!!selectedPub}
+         onClose={() => setSelectedPub(null)}
+      />
+      
       <div className="w-full flex justify-center mt-6 gap-2 flex-wrap pb-6">
         {paginaActual > 1 && (
           <button
@@ -233,11 +268,16 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
       </div>
 
       <button
-        onClick={() => { if (user) setFormulario(true); else navigate('/iniciarSesion'); }}
+        onClick={handleCrearPublicacion}
         className="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-yellow-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-lg hover:bg-yellow-700 transition-all duration-300 z-50 flex items-center justify-center text-2xl"
       >
         +
       </button>
+
+      <AlertaLimitePublicaciones
+        show={showLimitAlert}
+        onClose={() => setShowLimitAlert(false)}
+      />
 
       <FormularioPublicacion
         isOpen={formulario}

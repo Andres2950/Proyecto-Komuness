@@ -4,6 +4,7 @@ export interface IPublicacion {
   _id?: string;
   titulo: string;
   contenido: string;
+  contenidoBreve: string;
   autor: string | Types.ObjectId;  
   fecha: string;
   adjunto?: IAdjunto[];
@@ -13,6 +14,9 @@ export interface IPublicacion {
   fechaEvento?: string;
   horaEvento?: string;
   precio?: number;
+  moneda?: 'CRC' | 'USD';
+  monedaSimbolo?: '₡' | '$';
+  precioNegociable?: boolean;
   precioEstudiante?: number;     
   precioCiudadanoOro?: number;   
   enlacesExternos?: IEnlaceExterno[]; 
@@ -65,9 +69,13 @@ export interface IUbicacion {
 export interface IPublicacionUpdate {
   titulo?: string;
   contenido?: string;
+  contenidoBreve?: string;
   fechaEvento?: string;
   horaEvento?: string;
   precio?: number;
+  moneda?: 'CRC' | 'USD';
+  monedaSimbolo?: '₡' | '$';
+  precioNegociable?: boolean;
   precioEstudiante?: number;
   precioCiudadanoOro?: number;
   enlacesExternos?: IEnlaceExterno[];

@@ -46,8 +46,53 @@ function sanitizeName(name: string) {
 const libraryMaxMB = parseInt(process.env.LIBRARY_MAX_FILE_SIZE_MB || '200', 10);
 const maxFileSizeSlackBytes = parseInt(process.env.UPLOAD_MAX_FILE_SIZE_SLACK_BYTES || String(1 * 1024 * 1024), 10); // 1MB slack
 
+const ALLOWED_LIBRARY_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/zip',
+  'application/x-rar-compressed',
+  'application/x-rar',
+]);
+
+const ALLOWED_EXTENSIONS = new Set([
+  '.pdf',
+  '.xls',
+  '.xlsx',
+  '.doc',
+  '.docx',
+  '.ppt',
+  '.pptx',
+  '.txt',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.zip',
+  '.rar',
+]);
+
+const libraryFileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  
+  // Validar MIME type Y extensión
+  if (ALLOWED_LIBRARY_MIME_TYPES.has(file.mimetype) && ALLOWED_EXTENSIONS.has(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de archivo no permitido. Permitidos: PDF, Excel, Word, PPT, TXT, PNG, JPG, WEBP, ZIP y RAR.'));
+  }
+};
+
 export const uploadLibrary = multer({
-    storage: multer.diskStorage({
+  storage: multer.diskStorage({
     destination: async (_req, _file, cb) => {
       try {
         const dir = await ensureDestDir();
@@ -61,10 +106,10 @@ export const uploadLibrary = multer({
       cb(null, `${Date.now()}-${safe}`);
     },
   }),
-    // File size limit (in bytes). Default configurable via env LIBRARY_MAX_FILE_SIZE_MB (MB).
-    // Añadimos un pequeño slack para la sobrecarga multipart/form-data
-    limits: { fileSize: (libraryMaxMB * 1024 * 1024) + maxFileSizeSlackBytes },
+  fileFilter: libraryFileFilter,
+  limits: { fileSize: (libraryMaxMB * 1024 * 1024) + maxFileSizeSlackBytes },
 });
+
 /* ====================== FIN NUEVO ====================== */
 
 class BibliotecaController {
@@ -155,7 +200,7 @@ class BibliotecaController {
                     });
 
                     // 2) Asigna la URL usando el _id generado y guarda una sola vez
-                    archivo.url = `${process.env.PUBLIC_BASE_URL ||  'https://komuness.duckdns.org'}/api/biblioteca/files/${archivo._id}`;
+                    archivo.url = `${process.env.PUBLIC_BASE_URL ||  'https://localhost:5000'}/api/biblioteca/files/${archivo._id}`;
                     await archivo.save();
 
                     return {

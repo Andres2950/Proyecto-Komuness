@@ -65,21 +65,51 @@ export const Biblioteca = () => {
 
   // Configuración de dropzone
    // Aumentado a 200MB. Mantener en sync con el servidor (env LIBRARY_MAX_FILE_SIZE_MB)
-   const maxSize = 200 * 1024 * 1024 // 200 MB
+  const maxSize = 200 * 1024 * 1024 // 200 MB
+  const ALLOWED_LIBRARY_ACCEPT = {
+    'application/pdf': ['.pdf'],
+    'application/vnd.ms-excel': ['.xls'],
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'application/vnd.ms-powerpoint': ['.ppt'],
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+    'text/plain': ['.txt'],
+    'image/png': ['.png'],
+    'image/jpeg': ['.jpg', '.jpeg'],  // Solo estos, no .jfif, .pjpeg, etc.
+    'image/webp': ['.webp'],
+    'application/zip': ['.zip'],
+    'application/x-rar-compressed': ['.rar'],
+    'application/x-rar': ['.rar'],
+  }
+  const ALLOWED_EXTENSIONS = new Set([
+    '.pdf', '.xls', '.xlsx', '.doc', '.docx', '.ppt', '.pptx',
+    '.txt', '.png', '.jpg', '.jpeg', '.webp', '.zip', '.rar'
+  ])
   const {
     acceptedFiles,
     fileRejections,
     getRootProps,
     getInputProps,
     isDragActive,
-    inputRef // RF023: Para limpiar los archivos después de subir
+    inputRef, // RF023: Para limpiar los archivos después de subir
   } = useDropzone({
     maxSize,
+    accept: ALLOWED_LIBRARY_ACCEPT,
+    validator: (file) => {
+      const ext = ext(file.name)
+      if (!ALLOWED_EXTENSIONS.has(ext)) {
+        return { code: 'file-invalid-type', message: 'Extensión no permitida' }
+      }
+      return null
+    },
     onDropRejected: (fileRejections) => {
       fileRejections.forEach(({ file, errors }) => {
         errors.forEach(error => {
           if (error.code === 'file-too-large') {
-             toast.error(`El archivo ${file.name} es demasiado grande. Tamaño máximo permitido: 201 MB.`)
+            toast.error(`El archivo ${file.name} es demasiado grande. Tamaño máximo permitido: 200 MB.`)
+          } else if (error.code === 'file-invalid-type') {
+            toast.error(`Tipo de archivo no permitido: ${file.name}. Permitidos: PDF, Excel, Word, PPT, TXT, PNG, JPG, WEBP, ZIP y RAR.`)
           } else {
             toast.error(`Error al subir el archivo ${file.name}: ${error.message}`)
           }
@@ -453,23 +483,11 @@ export const Biblioteca = () => {
 
   return (
     <div className="flex flex-col items-center gap-4 bg-gray-800/80 pt-16 min-h-screen p-4 sm:p-8">
-      {/* Botón de volver */}
-      {mostrarBotonVolver() && (
-        <div className="absolute top-22 left-11 z-20">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
-          >
-            <IoMdArrowRoundBack color="black" size={25} />
-          </button>
-        </div>
-      )}
-
       {/* Título */}
       <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
         <span className="text-gray-200">Biblioteca</span>
       </h1>
+
 
       {/* Nombre de carpeta actual */}
       <p className="text-xl text-white font-semibold flex items-center gap-2">
@@ -627,6 +645,12 @@ export const Biblioteca = () => {
                     handleOpenModal(doc)
                   }
                 }}
+		onContextMenu={(e) => {
+		    e.preventDefault();
+		    if(doc.tag === 'carpeta'){
+			handleOpenModal(doc)
+		    }
+		}}
               />
             ))}
           </div>

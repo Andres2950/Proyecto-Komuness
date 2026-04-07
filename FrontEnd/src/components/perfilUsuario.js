@@ -12,6 +12,7 @@ import { FiSettings, FiCreditCard } from "react-icons/fi";
 import ModalLimitesPublicaciones from "./modalLimitesPublicaciones";
 import ModalConfiguracionPagos from "./ModalConfiguracionPagos";
 import AlertaLimitePublicaciones from "./AlertaLimitePublicaciones";
+import LimitePublicaciones from "./limiteDePublicaciones";
 
 export const PerfilUsuario = () => {
   const navigate = useNavigate();
@@ -956,36 +957,9 @@ export const PerfilUsuario = () => {
 
               {/* Barra de progreso de publicaciones */}
               <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-200">Publicaciones</span>
-                  <span className="font-semibold text-white">
-                    {limiteData.publicacionesActuales} / {limiteData.limite}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      (limiteData.publicacionesActuales / limiteData.limite) * 100 >= 100
-                        ? "bg-red-500"
-                        : (limiteData.publicacionesActuales / limiteData.limite) * 100 >= 80
-                        ? "bg-yellow-500"
-                        : "bg-blue-500"
-                    }`}
-                    style={{
-                      width: `${Math.min(
-                        (limiteData.publicacionesActuales / limiteData.limite) * 100,
-                        100
-                      )}%`,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-300 mt-1">
-                  {limiteData.publicacionesActuales >= limiteData.limite
-                    ? "¡Has alcanzado tu límite!"
-                    : `${
-                        limiteData.limite - limiteData.publicacionesActuales
-                      } publicaciones disponibles`}
-                </p>
+                <LimitePublicaciones
+                  limiteData={limiteData} navBar={false}
+                />
               </div>
 
               {/* Botón para actualizar a Premium */}
@@ -1015,39 +989,7 @@ export const PerfilUsuario = () => {
                 </span>
               </div>
 
-              {/* Barra de progreso de publicaciones */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-200">Publicaciones</span>
-                  <span className="font-semibold text-white">
-                    {limiteData.publicacionesActuales} / {limiteData.limite}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      (limiteData.publicacionesActuales / limiteData.limite) * 100 >= 100
-                        ? "bg-red-500"
-                        : (limiteData.publicacionesActuales / limiteData.limite) * 100 >= 80
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                    }`}
-                    style={{
-                      width: `${Math.min(
-                        (limiteData.publicacionesActuales / limiteData.limite) * 100,
-                        100
-                      )}%`,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-300 mt-1">
-                  {limiteData.publicacionesActuales >= limiteData.limite
-                    ? "¡Has alcanzado tu límite!"
-                    : `${
-                        limiteData.limite - limiteData.publicacionesActuales
-                      } publicaciones disponibles`}
-                </p>
-              </div>
+              
 
               {/* Información de vencimiento */}
               {limiteData.fechaVencimientoPremium && (

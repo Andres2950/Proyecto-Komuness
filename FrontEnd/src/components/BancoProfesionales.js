@@ -153,13 +153,6 @@ const quitarDelBanco = async (perfilId) => {
     <div className="banco-profesionales-container">
       {/* Header */}
       <div className="banco-header">
-        <button 
-          onClick={() => navigate(-1)}
-          className="btn-volver"
-        >
-          <FaArrowLeft /> Volver
-        </button>
-        
         <div className="banco-title-section">
           <h1>Banco de Profesionales</h1>
           <p>Encuentra profesionales calificados en nuestra comunidad</p>
