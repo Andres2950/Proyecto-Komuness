@@ -155,7 +155,6 @@ export const CrearUsuario = () => {
               </button>
             </div>
           </div>
-
           <button
             type="submit"
             className="w-full bg-[#ffbf30] text-[#12141a] font-bold rounded-xl py-2.5 sm:py-3 text-base sm:text-lg"
@@ -163,7 +162,12 @@ export const CrearUsuario = () => {
             Registrarse
           </button>
         </form>
-
+        <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-center">
+          Al crear tu usuario aceptas nuestros{" "}
+          <a href="/terminos-y-condiciones" className="text-[#ffbf30] font-medium">
+            Términos y Condiciones
+          </a>
+        </p>
         <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-center">
           ¿Ya tienes cuenta?{" "}
           <a href="/iniciarSesion" className="text-[#ffbf30] font-medium">
