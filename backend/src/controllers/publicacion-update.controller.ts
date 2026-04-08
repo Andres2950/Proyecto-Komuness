@@ -97,6 +97,7 @@ export const requestUpdatePublicacion = async (req: Request, res: Response): Pro
       if (ubicacion !== undefined) {
         updateData.ubicacion = ubicacion;
       }
+    }
     if (publicacion.tag === 'emprendimiento' && updateData.precioNegociable === true) {
       updateData.precio = undefined;
       updateData.precioEstudiante = undefined;
@@ -662,6 +663,7 @@ function parseUbicacion(input: any): IUbicacion | undefined {
   } catch {
     return undefined;
   }
+}
 function parseBoolean(input: any): boolean | undefined {
   if (input === undefined || input === null || input === '') return undefined;
   if (typeof input === 'boolean') return input;

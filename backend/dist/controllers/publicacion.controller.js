@@ -165,6 +165,43 @@ function parseHoraEvento(input) {
     const t = input.trim();
     return /^\d{2}:\d{2}$/.test(t) ? t : undefined;
 }
+// función para validar ubicación
+function parseUbicacion(input) {
+    if (!input)
+        return undefined;
+    try {
+        let ubicacion;
+        // Si es string (JSON), parsear
+        if (typeof input === 'string') {
+            ubicacion = JSON.parse(input);
+        }
+        else {
+            ubicacion = input;
+        }
+        // Validar que tenga los campos necesarios
+        if (!ubicacion || typeof ubicacion !== 'object')
+            return undefined;
+        const lat = Number(ubicacion.latitude);
+        const lng = Number(ubicacion.longitude);
+        const dir = String(ubicacion.direccion).trim();
+        // Validar rango de coordenadas válidas
+        if (!Number.isFinite(lat) || lat < -90 || lat > 90)
+            return undefined;
+        if (!Number.isFinite(lng) || lng < -180 || lng > 180)
+            return undefined;
+        if (dir.length === 0 || dir.length > 500)
+            return undefined;
+        return {
+            latitude: lat,
+            longitude: lng,
+            direccion: dir,
+            mapLink: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`
+        };
+    }
+    catch (_a) {
+        return undefined;
+    }
+}
 // ───────────────────────────────────────────────────────────────────────────────
 // Helper: correos de admins (tipoUsuario = 1) con email válido
 // ───────────────────────────────────────────────────────────────────────────────
@@ -200,6 +237,7 @@ const createPublicacion = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const horaEvento = parseHoraEvento(body.horaEvento);
         const telefono = parseTelefono(body.telefono);
         const enlacesExternos = parseEnlacesExternos(body.enlacesExternos);
+        const ubicacion = parseUbicacion(body.ubicacion);
         const monedaData = getMonedaData(body.moneda, body.monedaSimbolo);
         const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
         if (pricing.error) {
@@ -208,7 +246,8 @@ const createPublicacion = (req, res) => __awaiter(void 0, void 0, void 0, functi
         }
         const publicacion = Object.assign(Object.assign({}, body), { autor: userId, publicado: `${body.publicado}` === 'true', precio: pricing.precio, moneda: monedaData.moneda, monedaSimbolo: monedaData.monedaSimbolo, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
             telefono,
-            enlacesExternos });
+            enlacesExternos,
+            ubicacion });
         const nuevaPublicacion = new publicacion_model_1.modelPublicacion(publicacion);
         const savePost = yield nuevaPublicacion.save();
         // Notificación por correo a admins (aprobación)
@@ -281,6 +320,7 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const horaEvento = parseHoraEvento(publicacion.horaEvento);
         const telefono = parseTelefono(publicacion.telefono);
         const enlacesExternos = parseEnlacesExternos(publicacion.enlacesExternos);
+        const ubicacion = parseUbicacion(publicacion.ubicacion);
         const monedaData = getMonedaData(publicacion.moneda, publicacion.monedaSimbolo);
         const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
         if (pricing.error) {
@@ -300,7 +340,8 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const nuevaPublicacion = new publicacion_model_1.modelPublicacion(Object.assign(Object.assign({}, publicacion), { autor: userId, // 🔴 forzamos autor desde el token
             categoria, adjunto: adjuntos, publicado: `${publicacion.publicado}` === 'true', precio: pricing.precio, moneda: monedaData.moneda, monedaSimbolo: monedaData.monedaSimbolo, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
             telefono,
-            enlacesExternos }));
+            enlacesExternos,
+            ubicacion }));
         const savePost = yield nuevaPublicacion.save();
         // Notificación por correo a admins (aprobación)
         try {

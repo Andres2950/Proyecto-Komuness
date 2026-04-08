@@ -17,9 +17,16 @@ const enlaceExternoSchema = new mongoose_1.Schema({
     nombre: { type: String, required: true },
     url: { type: String, required: true }
 });
+const ubicacionSchema = new mongoose_1.Schema({
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    direccion: { type: String, required: true },
+    mapLink: { type: String, required: true }
+}, { _id: false });
 const publicacionUpdateSchema = new mongoose_1.Schema({
     titulo: { type: String, required: false },
     contenido: { type: String, required: false },
+    contenidoBreve: { type: String, required: false },
     fechaEvento: { type: String, required: false },
     horaEvento: { type: String, required: false },
     precio: { type: Number, required: false },
@@ -30,6 +37,7 @@ const publicacionUpdateSchema = new mongoose_1.Schema({
     precioCiudadanoOro: { type: Number, required: false },
     enlacesExternos: { type: [enlaceExternoSchema], required: false },
     telefono: { type: String, required: false },
+    ubicacion: { type: ubicacionSchema, required: false },
     categoria: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Categoria', required: false },
     adjunto: { type: [adjuntoSchema], required: false },
     requestedAt: { type: String, required: true },
@@ -52,6 +60,7 @@ const editHistorySchema = new mongoose_1.Schema({
 const publicacionSchema = new mongoose_1.Schema({
     titulo: { type: String, required: true },
     contenido: { type: String, required: true },
+    contenidoBreve: { type: String, required: true },
     // id del autor
     autor: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Usuario', required: true },
     fecha: { type: String, required: true },
@@ -70,6 +79,7 @@ const publicacionSchema = new mongoose_1.Schema({
     precioCiudadanoOro: { type: Number, required: false },
     enlacesExternos: { type: [enlaceExternoSchema], required: false },
     telefono: { type: String, required: false },
+    ubicacion: { type: ubicacionSchema, required: false }, // Ubicación del evento
     // categorías de área
     categoria: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Categoria', required: true },
     // CONTROL DE EDICIONES 

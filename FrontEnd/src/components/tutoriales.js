@@ -1,24 +1,73 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "../components/context/AuthContext"
+import { toast } from 'react-hot-toast';
 import { API_URL } from '../utils/api'
 
 
 export const Tutoriales = () => {
     const { user } = useAuth()
+    const [mostrarModal, setMostrarModal] = useState(false);
+    const [nombreTutorial, setNombreTutorial] = useState("");
+    const [urlTutorial, setUrlTutorial] = useState("");
+    const [tutoriales, setTutoriales] = useState([]);
 
-    const [mostrarModal, setMostrarModal] = useState(false)
-    const [nombreTutorial, setNombreTutorial] = useState("")
-    const [urlTutorial, setUrlTutorial] = useState("")
+    useEffect(()=>{
+       fetchTutoriales(); 
+    }, []);
    
     const handleCrearTutorial = async () => {
-        
-        //TODO: agregar el back y la logica para crear el tutorial 
+        try {
+            
+            // evita enviar problemas a back, aunque back tambien valida esto
+            if (!nombreTutorial.trim() || !urlTutorial.trim()){
+                toast.error("Nombre y URL son obligatorios para crear un tutorial");
+                return;
+            }
 
-        setNombreTutorial("")
-        setUrlTutorial("")
-        setMostrarModal(false)
+            const res = await fetch(`${API_URL}/tutoriales/create-tutorial`, {
+                method: "POST",
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    nombre: nombreTutorial.trim(),
+                    url: urlTutorial.trim(),
+                })
+            });
+
+          if (res.ok) {
+            toast.success('Tutorial creado');
+            setNombreTutorial("");
+            setUrlTutorial("");
+            setMostrarModal(false);
+            fetchTutoriales();
+          } else {
+            const errorData = await res.json();
+            toast.error(errorData.message || 'Error al guardar el tutorial');
+          }
+        } catch (error) {
+            console.error('Error: ', error);
+            toast.error('Error al crear el tutorial');
+        }
     }
+
+    const fetchTutoriales = async () => {
+        try {
+          const response = await fetch(`${API_URL}/tutoriales/get-tutoriales`);
+          if (!response.ok) {
+            console.log(response);
+            throw new Error('Error al cargar tutoriales');
+          }
+          
+          const data = await response.json();
+          setTutoriales(data.data || []);
+        } catch (error) {
+          console.error('Error:', error);
+          toast.error('Error al cargar tutoriales');
+        }
+    };
 
     return (
     <div className="flex flex-col items-center gap-4 bg-gray-800/80 pt-16 min-h-screen p-4 sm:p-8">
@@ -29,7 +78,7 @@ export const Tutoriales = () => {
       </h1>
 
       {/*Boton para agregar un tutorial, solo para admin*/}
-      {(user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
+      {(user) && (user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
       <div className="w-full max-w-6xl px-4 py-2 text-white">
         <button
             onClick={() => setMostrarModal(true)}
@@ -80,7 +129,19 @@ export const Tutoriales = () => {
       </div>
       )}
 
+    {tutoriales.map( (tutorial, i) => (
+        <div>
+            <div>{tutorial.nombre}</div>
+            <a 
+                href={tutorial.url}
+                className="text-blue-300 hover:text-blue-200 underline" 
+                target="_blank" 
+            >
+                {tutorial.url}
+            </a>
 
+        </div>
+    ))}
     </div>
     )
 }
