@@ -1,5 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
-import { useParams, useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect } from 'react'
 import { useAuth } from "../components/context/AuthContext"
 import { toast } from 'react-hot-toast';
 import { API_URL } from '../utils/api'
@@ -15,6 +14,29 @@ export const Tutoriales = () => {
     useEffect(()=>{
        fetchTutoriales(); 
     }, []);
+
+    const handleDeleteTutorial = async (tutorial) => {
+        if (!window.confirm('¿Está seguro de que quiere eliminar este tutorial?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/tutoriales/delete-tutorial/${tutorial._id}`, {
+                method: 'DELETE',
+                headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (response.ok) {
+                toast.success('Tutorial eliminado');
+                fetchTutoriales();
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.message || 'Error al eliminar el tutorial');
+            }
+        } catch (e) {
+            toast.error('Error al eliminar el tutorial');
+            console.error(e);
+        }
+    }
    
     const handleCrearTutorial = async () => {
         try {
@@ -84,7 +106,7 @@ export const Tutoriales = () => {
             onClick={() => setMostrarModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-4 rounded-lg shadow"
         >
-            + Agregar tutorial
+            + Agregar Tutorial
         </button>
         
         {/*Modal bien perron para agregar tutoriales*/}
@@ -128,20 +150,47 @@ export const Tutoriales = () => {
 
       </div>
       )}
+    {tutoriales.map( (tutorial, i) => {
+        const isYouTube = tutorial.url?.includes("www.youtube.com");
 
-    {tutoriales.map( (tutorial, i) => (
-        <div>
-            <div>{tutorial.nombre}</div>
-            <a 
-                href={tutorial.url}
-                className="text-blue-300 hover:text-blue-200 underline" 
-                target="_blank" 
-            >
-                {tutorial.url}
-            </a>
+        const getYTEmbedUrl = (url) =>{
+            const id = new URL(url).searchParams.get("v"); // el key para el id de un video de YT es "v"
+            return `https://www.youtube.com/embed/${id}`;
+        };
 
-        </div>
-    ))}
+        return (
+            <div className="w-full max-w-6xl bg-white/10 rounded-xl p-4">
+                <div className="text-2xl text-white font-semibold flex items-center gap-2 justify-center">{tutorial.nombre}</div>
+                {isYouTube? (   
+                    <div className="mt-3 aspect-video w-full">
+                    <iframe
+                        title={tutorial.nombre}
+                        src={getYTEmbedUrl(tutorial.url)}
+                        className="w-full h-full rounded-lg"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                    />
+                    </div>  
+                ):(
+                    <a 
+                        href={tutorial.url}
+                        className="text-blue-300 hover:text-blue-200 underline" 
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        {tutorial.url}
+                    </a>
+                )}
+                <button
+                    onClick={() => handleDeleteTutorial(tutorial)}
+                    className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium p-4 rounded-lg shadow mt-3"
+                >
+                    - Eliminar Tutorial
+                </button>
+
+            </div>
+        );
+    })}
     </div>
     )
 }

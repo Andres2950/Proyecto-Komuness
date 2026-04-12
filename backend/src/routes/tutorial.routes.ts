@@ -15,6 +15,6 @@ router.get("/get-tutoriales", getTutoriales);
 
 // Crear y eliminar, solo admin (tipoUsuario 1 o 0)
 router.post("/create-tutorial", authMiddleware, verificarRoles([0, 1]), createTutorial);
-router.delete("/delete-tutorial", authMiddleware, verificarRoles([0, 1]), deleteTutorial);
+router.delete("/delete-tutorial/:id", authMiddleware, verificarRoles([0, 1]), deleteTutorial);
 
 export default router;
