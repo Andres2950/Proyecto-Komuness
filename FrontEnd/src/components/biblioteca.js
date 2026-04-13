@@ -522,8 +522,6 @@ export const Biblioteca = () => {
 
     let result;
 
-    console.log(selectedFiles);
-
     if (files.length !== 0) {
       const payload = {
         fileIds: files.map(f => f.id),
@@ -691,49 +689,6 @@ export const Biblioteca = () => {
               <div>{files}</div>
             </div>
           )}
-
-          {/* Botón crear carpeta (solo admin/super-admin) */}
-          {(user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
-            <div className="w-full max-w-6xl px-4 py-2 text-white">
-              <button
-                onClick={() => setMostrarModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-4 rounded-lg shadow"
-              >
-                + Crear carpeta
-              </button>
-
-              {mostrarModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                  <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-lg">
-                    <h3 className="text-lg font-semibold mb-4 text-gray-800">
-                      Nueva carpeta
-                    </h3>
-                    <input
-                      type="text"
-                      value={nombreCarpeta}
-                      onChange={(e) => setNombreCarpeta(e.target.value)}
-                      placeholder="Nombre de la carpeta"
-                      className="w-full px-4 py-2 mb-4 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={() => setMostrarModal(false)}
-                        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={handleCrearCarpeta}
-                        className="px-4 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                      >
-                        Crear
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
 
@@ -774,14 +729,69 @@ export const Biblioteca = () => {
       </div>
 
 
-   
-  <div className="flex justify-start px-3 gap-4">
+  {user && (user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
+  <div className="flex flex-col gap-2">
+  <div className="flex flex-row justify-start px-3 gap-4">
+              <button
+                onClick={() => setMostrarModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-3 rounded-lg shadow flex gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-plus-icon lucide-folder-plus">
+                  <path d="M12 10v6"/><path d="M9 13h6"/><path 
+                  d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+                </svg>
+                Crear carpeta
+              </button>
+
+              {mostrarModal && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                  <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-lg">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                      Nueva carpeta
+                    </h3>
+                    <input
+                      type="text"
+                      value={nombreCarpeta}
+                      onChange={(e) => setNombreCarpeta(e.target.value)}
+                      placeholder="Nombre de la carpeta"
+                      className="w-full px-4 py-2 mb-4 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => setMostrarModal(false)}
+                        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleCrearCarpeta}
+                        className="px-4 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                      >
+                        Crear
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
     <button 
-      className="w-full focus:ring focus:outline md:w-auto px-6 py-3 bg-blue-600
-      text-white rounded-xl hover:bg-blue-700 transition-colors flex gap-2"
-      onClick={() => setIsMoveActive(!isMoveActive)}
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-minus-icon lucide-copy-minus"><line x1="12" x2="18" y1="15" y2="15"/><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-3 rounded-lg shadow flex gap-2"
+      onClick={() => {if(isMoveActive) {setSelectedFiles([])} setIsMoveActive(!isMoveActive)}}
+    > 
+      {!isMoveActive ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-input-icon lucide-folder-input">
+          <path d="M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1"/>
+          <path d="M2 13h10"/><path d="m9 16 3-3-3-3"/>
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-minus-icon lucide-copy-minus">
+          <line x1="12" x2="18" y1="15" y2="15"/><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path 
+          d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+        </svg>
+      )}
       {isMoveActive ? ("Cancelar") : ("Mover archivos")}
     </button>
     
@@ -789,11 +799,12 @@ export const Biblioteca = () => {
       <div>
         <button
           onClick={handleMoveFiles}
-          className="w-full focus:ring focus:outline md:w-auto 
-                    px-6 py-3 bg-blue-600
-                    text-white rounded-xl hover:bg-blue-700 
-                    transition-colors flex gap-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-3 rounded-lg shadow flex gap-2"
         >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-check-icon lucide-folder-check">
+            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="m9 13 2 2 4-4"/>
+          </svg>
           Mover aquí
         </button>
       </div>
@@ -828,6 +839,9 @@ export const Biblioteca = () => {
       </div>
     </div>
   )}
+  </div>
+  )}
+
       {/* Grid de documentos */}
       <div className="w-full max-w-6xl bg-white/10 rounded-xl p-4">
         <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-200 rounded-lg">
