@@ -254,6 +254,138 @@ class BibliotecaController {
         }
     }
 
+
+    static async moveFiles(req: Request, res: Response) {
+
+    const { fileIds, targetFolderId, userId, userType } = req.body;
+
+    // ================= VALIDACIONES =================
+
+    if (!userId) {
+        return res.status(400).json({
+            success: false,
+            message: 'userId es requerido',
+            results: []
+        });
+    }
+
+    if (userType === undefined || userType === null) {
+        return res.status(400).json({
+            success: false,
+            message: 'userType es requerido',
+            results: []
+        });
+    }
+
+    if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'No se han enviado archivos para mover',
+            results: []
+        });
+    }
+
+    if (!targetFolderId) {
+        return res.status(400).json({
+            success: false,
+            message: 'targetFolderId es requerido',
+            results: []
+        });
+    }
+
+    try {
+
+        const userTypeNum = parseInt(userType);
+
+        // ================= VALIDACIÓN DE PERMISOS =================
+        // RF023: mismos roles que upload (0,1,2,3 pueden mover)
+        const allowedRoles = [0, 1, 2, 3];
+
+        if (!allowedRoles.includes(userTypeNum)) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permisos para mover archivos',
+                results: []
+            });
+        }
+
+	const folderValue =
+	  !targetFolderId || targetFolderId === "0"
+	    ? null
+	    : targetFolderId
+
+        const results = await Promise.all(
+            fileIds.map(async (fileId: string) => {
+
+                try {
+
+                    const archivo = await Archivo.findById(fileId);
+
+                    if (!archivo) {
+                        return {
+                            success: false,
+                            fileId,
+                            message: 'Archivo no encontrado hdjashdjsha',
+                            content: null
+                        };
+                    }
+
+                    // ================= ACTUALIZACIÓN =================
+                    archivo.folder = folderValue;
+
+                    await archivo.save();
+
+                    return {
+                        success: true,
+                        fileId,
+                        nombre: archivo.nombre,
+                        message: 'Archivo movido correctamente',
+                        content: archivo
+                    };
+
+                } catch (error) {
+                    console.error('Error moviendo archivo:', error);
+
+                    return {
+                        success: false,
+                        fileId,
+                        message: error instanceof Error
+                            ? error.message
+                            : 'Error interno al mover el archivo',
+                        content: null
+                    };
+                }
+            })
+        );
+
+        // ================= RESPUESTA GLOBAL =================
+
+        const hasErrors = results.some(r => !r.success);
+
+        let generalMessage = 'Archivos movidos correctamente';
+
+        if (hasErrors) {
+            generalMessage = 'Algunos archivos no pudieron moverse correctamente';
+        }
+
+        return res.status(hasErrors ? 207 : 200).json({
+            success: !hasErrors,
+            message: generalMessage,
+            results
+        });
+
+    } catch (error) {
+        console.error('Error general al mover archivos:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: error instanceof Error ? error.message : 'An unknown error occurred'
+        });
+    }
+    }
+
+
     /**
      * @description: Lista el contenido de una carpeta de la biblioteca (archivos y carpetas) 
      * @route: GET /api/biblioteca/list/:id
@@ -370,6 +502,60 @@ class BibliotecaController {
             });
         }
     }
+
+    static async moveFolders(req: Request, res: Response){
+      const {folderIds, targetFolderId} = req.body;
+      if(!folderIds) {
+        return res.status(400).json({
+          success: false,
+          message: 'carpetas a mover son requeridas',
+          errors: []
+        });
+      }
+      try {
+        const results = await Promise.all(
+          folderIds.map(async (folderId: String) => {
+            try {
+              const folder = await Folder.findById(folderId);
+
+              if (!folder){
+                return {
+                  success: false,
+                  folderId,
+                  message: 'Carpeta no encontrado',
+                  content: null
+                }
+              }
+              console.log(folder);
+              folder.directorioPadre = targetFolderId === '0' ? null : targetFolderId;
+              await folder.save();
+
+              return res.status(200).json({
+                success: true,
+                message: 'Carpeta movida correctamente',
+                content: folder,
+              });
+            } catch (error) {
+              return res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor al mover carpeta',
+                error: error instanceof Error ? error.message : 'An unknown error occurred'
+              });
+            }
+          }
+          )
+        )
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error interno del servidor al mover carpetas',
+          error: error instanceof Error ? error.message : 'An unknown error occurred'
+        });
+      }
+    }
+
+
+
     /**
      * Función para eliminar un archivo de la biblioteca (modular, debido a que hay 2 funciones que la llaman)
      * @param id

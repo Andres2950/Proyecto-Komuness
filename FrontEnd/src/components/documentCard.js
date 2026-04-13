@@ -1,4 +1,5 @@
 import React from 'react'
+import {useState} from 'react'
 
 import {
     AiFillFilePdf,
@@ -14,7 +15,7 @@ import {
 } from 'react-icons/ai'
 
 
-export const DocumentCard = ({ name, author, type = 'default', size, onClick, onContextMenu }) => {
+export const DocumentCard = ({ name, author, type = 'default', size, onClick, onContextMenu, isChecked, onCheck, checkVisible }) => {
 
 
 
@@ -35,14 +36,25 @@ export const DocumentCard = ({ name, author, type = 'default', size, onClick, on
 
     const icon = iconMap[type.toLowerCase()] || iconMap.default;
 
-
     return (
+      <div 
+        className="flex items-center gap-2 px-3 py-2 rounded-lg shadow bg-[#5445ff] hover:bg-[#3f35cc] cursor-pointer transition-all w-full max-w-full"
+      >
+	      {/*Checkbox para seleccionar archivo a mover*/}
+        {checkVisible && (
+        <input
+	    	  type="checkbox"
+      		checked={isChecked}
+	      	onChange={onCheck}
+  	    />
+        )}
+
         <div
-            onClick={onClick}
-	    onContextMenu={onContextMenu}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg shadow bg-[#5445ff] hover:bg-[#3f35cc] cursor-pointer transition-all w-full max-w-full"
-        >
-            {/* Icono de documento */}
+	    	  className="flex min-w-0 flex-1 w-full"
+  	    	onClick={onClick}
+	      	onContextMenu={onContextMenu}>
+
+	      {/* Icono de documento */}
             {icon}
 
             {/* Info del documento */}
@@ -65,7 +77,8 @@ export const DocumentCard = ({ name, author, type = 'default', size, onClick, on
                     {size}
                 </div>
             </div>
-        </div>
+	      </div>
+      </div>
     );
 
 

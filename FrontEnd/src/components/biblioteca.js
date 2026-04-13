@@ -40,6 +40,14 @@ export const Biblioteca = () => {
 
   // Estados principales
   const [folderName, setFolderName] = useState(location.state?.folderName || 'Biblioteca')
+
+  // actualizar el folderName
+  useEffect(() => {
+    if (location.state?.folderName) {
+      setFolderName(location.state.folderName)
+    }
+  }, [location.state])
+
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [documentos, setDocumentos] = useState([])
   const [documentosFiltrados, setDocumentosFiltrados] = useState([])
@@ -86,6 +94,10 @@ export const Biblioteca = () => {
     '.pdf', '.xls', '.xlsx', '.doc', '.docx', '.ppt', '.pptx',
     '.txt', '.png', '.jpg', '.jpeg', '.webp', '.zip', '.rar'
   ])
+  
+  const getExt = (filename) => {
+    return '.' + filename.split('.').pop().toLowerCase()
+  }
   const {
     acceptedFiles,
     fileRejections,
@@ -97,7 +109,7 @@ export const Biblioteca = () => {
     maxSize,
     accept: ALLOWED_LIBRARY_ACCEPT,
     validator: (file) => {
-      const ext = ext(file.name)
+      const ext = getExt(file.name)
       if (!ALLOWED_EXTENSIONS.has(ext)) {
         return { code: 'file-invalid-type', message: 'Extensión no permitida' }
       }
@@ -481,6 +493,140 @@ export const Biblioteca = () => {
     setDocumentosFiltrados(filtrados)
   }, [nombre, etiquetaSeleccionada, documentos])
 
+
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [isMoveActive, setIsMoveActive] = useState(false);
+  
+  const toggleFileSelection = (doc) =>{
+    setSelectedFiles(prev => {
+	    const exists = prev.some(f => f.id === doc.id);
+    	if (exists) {
+	      return prev.filter(f => f.id !== doc.id);
+    	} else {
+	      return [...prev, doc];
+  	  }
+    });
+  }
+
+  /*Llamada al backedn para mover archivos de carpetas y carpetas*/
+  const handleMoveFiles = async (e) => {
+    e.preventDefault()
+
+    if (selectedFiles.length === 0) {
+      toast.error("Selecciona archivos y una carpeta destino")
+      return
+    }
+
+    const folders = selectedFiles.filter(f => f.tag === "carpeta");
+    const files = selectedFiles.filter((item) => {return item.tag !== "carpeta"})
+
+    let result;
+
+    console.log(selectedFiles);
+
+    if (files.length !== 0) {
+      const payload = {
+        fileIds: files.map(f => f.id),
+        targetFolderId: id,
+        userId: user._id,
+        userType: user.tipoUsuario,
+      }
+
+      result = await toast.promise(
+        (async () => {
+          const response = await fetch(`${API_URL}/biblioteca/move`, {
+            method: 'PUT',
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(payload),
+          })
+
+          if (!response.ok) {
+            let body = null
+            try { body = await response.json() } catch (_) {}
+            throw new Error(body?.message || `Error al mover archivos (${response.status})`)
+          }
+
+          return response.json()
+        })(),
+    
+        {
+          loading: 'Moviendo archivos...',
+          success: (data) => {
+            setSelectedFiles([])
+            fetchFolderContents()
+            return data.message || 'Archivos movidos correctamente'
+          },
+          error: (err) => {
+            const msg = err instanceof Error ? err.message : String(err)
+            return msg.includes('Network')
+              ? 'Error de conexión al mover archivos'
+              : `Error al mover archivos: ${msg}`
+          },
+          duration: 8000,
+        }
+      )
+    }
+
+    if (folders.length !== 0){
+      const payload2 = {
+        folderIds: folders.map(f => f.id),
+        targetFolderId: id,
+        userId: user._id,
+        userType: user.tipoUsuario,
+      }
+
+      const result2 = await toast.promise(
+        (async () => {
+          const response = await fetch(`${API_URL}/biblioteca/folder/move`, {
+            method: 'PUT',
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(payload2),
+          })
+
+          if (!response.ok){
+            let body = null;
+            try {body = await response.json() } catch (_) {}
+            throw new Error(body?.message || `Error al mover carpetas (${response.status})`);
+          }
+
+          return response.json();
+        })(),
+        {
+          loading: 'Moviendo carpetas...',
+          success: (data) => {
+            setSelectedFiles([])
+            fetchFolderContents()
+            return data.message || 'Carpetas movidas correctamente'
+          },
+          error: (err) => {
+            const msg = err instanceof Error ? err.message : String(err)
+            return msg.includes('Network')
+              ? 'Error de conexión al mover carpetas'
+              : `Error al mover carpetas: ${msg}`
+          },
+          duration: 8000,
+        }
+      )
+    }
+    try {
+      if (result && Array.isArray(result.results)) {
+        const failed = result.results.filter(r => !r.success)
+
+        failed.forEach(f => {
+          toast.error(`Error: ${f.nombre} - ${f.message}`)
+        })
+      }
+    } catch (e) {
+      console.error("Error procesando move:", e)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 bg-gray-800/80 pt-16 min-h-screen p-4 sm:p-8">
       {/* Título */}
@@ -627,6 +773,61 @@ export const Biblioteca = () => {
         </form>
       </div>
 
+
+   
+  <div className="flex justify-start px-3 gap-4">
+    <button 
+      className="w-full focus:ring focus:outline md:w-auto px-6 py-3 bg-blue-600
+      text-white rounded-xl hover:bg-blue-700 transition-colors flex gap-2"
+      onClick={() => setIsMoveActive(!isMoveActive)}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-minus-icon lucide-copy-minus"><line x1="12" x2="18" y1="15" y2="15"/><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      {isMoveActive ? ("Cancelar") : ("Mover archivos")}
+    </button>
+    
+    {isMoveActive && (
+      <div>
+        <button
+          onClick={handleMoveFiles}
+          className="w-full focus:ring focus:outline md:w-auto 
+                    px-6 py-3 bg-blue-600
+                    text-white rounded-xl hover:bg-blue-700 
+                    transition-colors flex gap-2"
+        >
+          Mover aquí
+        </button>
+      </div>
+    )}
+  </div>
+
+  {isMoveActive && (
+    <div>
+      <div className="bg-white shadow-md rounded-xl p-4 w-full max-w-md border border-gray-200">
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
+        📂 Archivos seleccionados
+        </label>
+
+        <div className="flex flex-wrap gap-2">
+          {selectedFiles.map(file => (
+            <div
+              key={file.id}
+              className="flex items-center bg-gray-100 hover:bg-gray-200 transition px-3 py-1.5 rounded-full text-sm text-gray-700 max-w-full"
+            >
+              <span className="truncate max-w-[120px]">
+                {file.nombre}
+              </span>
+            </div>
+          ))}
+        </div>
+
+      {selectedFiles.length === 0 && (
+        <p className="text-sm text-gray-400 italic text-center mt-2">
+          No hay archivos seleccionados
+        </p>
+      )}
+      </div>
+    </div>
+  )}
       {/* Grid de documentos */}
       <div className="w-full max-w-6xl bg-white/10 rounded-xl p-4">
         <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-200 rounded-lg">
@@ -645,16 +846,19 @@ export const Biblioteca = () => {
                     handleOpenModal(doc)
                   }
                 }}
-		onContextMenu={(e) => {
-		    e.preventDefault();
-		    if(doc.tag === 'carpeta'){
-			handleOpenModal(doc)
-		    }
-		}}
-              />
-            ))}
+		            onContextMenu={(e) => {
+          		    e.preventDefault();
+          		    if(doc.tag === 'carpeta'){
+              			handleOpenModal(doc)
+          		    }
+            		}}
+      	        isChecked={selectedFiles.some(f => f.id === doc.id)}
+            		onCheck={() => toggleFileSelection(doc)}
+                checkVisible={isMoveActive}
+                />
+              ))}
           </div>
-        </div>
+      </div>
         
         {/* Contador */}
         <div className="mt-2 text-center text-white text-sm">
