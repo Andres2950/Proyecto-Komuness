@@ -708,13 +708,13 @@ export const Biblioteca = () => {
             className="w-full md:w-48 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Todos los archivos</option>
-            <option value="pdf">Pdf</option>
+            <option value="pdf">PDF</option>
             <option value="excel">Excel</option>
             <option value="word">Word</option>
-            <option value="ppt">Ppt</option>
-            <option value="text">Texto</option>
-            <option value="img">Img</option>
-            <option value="zip">Zip</option>
+            <option value="ppt">PPT</option>
+            <option value="text">TXT</option>
+            <option value="img">IMG</option>
+            <option value="zip">ZIP</option>
           </select>
           <button
             className="w-full focus:ring focus:outline md:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
