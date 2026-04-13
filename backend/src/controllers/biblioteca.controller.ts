@@ -526,7 +526,6 @@ class BibliotecaController {
                   content: null
                 }
               }
-              console.log(folder);
               folder.directorioPadre = targetFolderId === '0' ? null : targetFolderId;
               await folder.save();
 
