@@ -1,28 +1,50 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../CSS/fuenteKomuness.css';
 import { useAuth } from '../components/context/AuthContext';
 import { API_URL } from '../utils/api';
 
 export const InitForm = () => {
   const { login } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [errorMensaje, setErrorMensaje] = useState('');
-  const navigate = useNavigate();
+  const [confirmacionMensaje, setConfirmacionMensaje] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const confirmacion = params.get('confirmacion');
+    const mensaje = params.get('mensaje');
+
+    if (confirmacion === 'ok') {
+      setConfirmacionMensaje(
+        mensaje || 'Cuenta confirmada exitosamente. Ya puedes iniciar sesión.'
+      );
+      setErrorMensaje('');
+      return;
+    }
+
+    if (confirmacion === 'error') {
+      setErrorMensaje(mensaje || 'No se pudo confirmar la cuenta.');
+      setConfirmacionMensaje('');
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMensaje(''); // Limpiar mensaje de error previo
+    setErrorMensaje('');
 
     try {
-      const response = await fetch(`${API_URL}/usuario/login`, {
+      const response = await fetch(API_URL + '/usuario/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password })
       });
 
       const data = await response.json();
@@ -30,11 +52,11 @@ export const InitForm = () => {
       if (response.ok) {
         const userData = { ...data.user };
         delete userData.password;
-        // Guardar usuario **y token** en localStorage
+
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', userData._id);
-        // Iniciar sesión en el contexto con usuario y token
+
         login(userData, data.token);
         navigate('/');
       } else {
@@ -47,7 +69,6 @@ export const InitForm = () => {
     }
   };
 
-  // Función para manejar el mostrar/ocultar contraseña
   const toggleMostrarContrasena = () => {
     setMostrarContrasena(!mostrarContrasena);
   };
@@ -59,7 +80,12 @@ export const InitForm = () => {
           ¡Bienvenido(a)!
         </h2>
 
-        {/* Mostrar mensaje de error si existe */}
+        {confirmacionMensaje && (
+          <div className="mb-4 text-green-400 text-center font-semibold text-sm sm:text-base">
+            {confirmacionMensaje}
+          </div>
+        )}
+
         {errorMensaje && (
           <div className="mb-4 text-red-400 text-center font-semibold text-sm sm:text-base">
             {errorMensaje}
@@ -81,6 +107,7 @@ export const InitForm = () => {
               required
             />
           </div>
+
           <div>
             <label htmlFor="password" className="block text-sm sm:text-base mb-2">
               Contraseña
@@ -109,6 +136,7 @@ export const InitForm = () => {
               </a>
             </div>
           </div>
+
           <button
             type="submit"
             className="w-full bg-[#5445ff] hover:bg-[#4032cc] text-white font-semibold rounded-xl py-2.5 sm:py-3 text-base sm:text-lg"
@@ -116,8 +144,9 @@ export const InitForm = () => {
             Iniciar Sesión
           </button>
         </form>
+
         <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-center">
-          ¿No tienes cuenta?{" "}
+          ¿No tienes cuenta?{' '}
           <a href="/crearUsr" className="text-[#ffbf30] font-medium">
             Regístrate
           </a>

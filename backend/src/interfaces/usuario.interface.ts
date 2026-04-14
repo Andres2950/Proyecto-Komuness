@@ -8,6 +8,9 @@ export interface IUsuario extends Document {
     tipoUsuario: number; // 0=super-admin, 1=admin, 2=básico, 3=premium
     codigo: string;
     fechaVencimientoPremium?: Date; // Fecha de vencimiento para usuarios premium
-    limitePublicaciones?: number; // Límite personalizado de publicaciones (si no se define, usa el global)
-    plan?: 'mensual' | 'anual' | null; 
+    limitePublicaciones?: number; // Límite personalizado de publicaciones
+    plan?: "mensual" | "anual" | null;
+    emailConfirmado?: boolean;
+    tokenConfirmacion?: string | null;
+    tokenConfirmacionExpira?: Date | null;
 }
