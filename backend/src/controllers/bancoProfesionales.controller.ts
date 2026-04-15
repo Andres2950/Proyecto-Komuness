@@ -178,9 +178,12 @@ export const obtenerEstadoBanco = async (req: Request, res: Response): Promise<v
     const perfil = await modelPerfil.findOne({ usuarioId: userId });
     
     if (!perfil) {
-      res.status(404).json({
+      res.status(200).json({
         success: false,
-        message: 'Perfil no encontrado'
+        data: {
+          enBancoProfesionales: false,
+          perfilPublico: false
+        }
       });
       return;
     }
