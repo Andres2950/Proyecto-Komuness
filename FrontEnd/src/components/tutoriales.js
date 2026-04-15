@@ -150,6 +150,7 @@ export const Tutoriales = () => {
 
       </div>
       )}
+    {/* cada tutorial tiene video si es de YT o link si no y el boton de borrar*/}
     {tutoriales.map( (tutorial, i) => {
         const isYouTube = tutorial.url?.includes("www.youtube.com");
 
@@ -181,12 +182,16 @@ export const Tutoriales = () => {
                         {tutorial.url}
                     </a>
                 )}
+
+                {/*borrar tutorial solo para admin*/}
+                {(user) && (user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
                 <button
                     onClick={() => handleDeleteTutorial(tutorial)}
                     className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium p-4 rounded-lg shadow mt-3"
                 >
                     - Eliminar Tutorial
                 </button>
+                )}
 
             </div>
         );
