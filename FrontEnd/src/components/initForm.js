@@ -14,6 +14,9 @@ export const InitForm = () => {
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [errorMensaje, setErrorMensaje] = useState('');
   const [confirmacionMensaje, setConfirmacionMensaje] = useState('');
+  const [mostrarReenviarConfirmacion, setMostrarReenviarConfirmacion] = useState(false);
+  const [reenviandoConfirmacion, setReenviandoConfirmacion] = useState(false);
+  const [reenvioMensaje, setReenvioMensaje] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -37,6 +40,8 @@ export const InitForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMensaje('');
+    setReenvioMensaje('');
+    setMostrarReenviarConfirmacion(false);
 
     try {
       const response = await fetch(API_URL + '/usuario/login', {
@@ -60,12 +65,54 @@ export const InitForm = () => {
         login(userData, data.token);
         navigate('/');
       } else {
+        if (data.code === 'EMAIL_NOT_CONFIRMED') {
+          setMostrarReenviarConfirmacion(true);
+        }
         console.error('Error en login:', data.message || 'Error desconocido');
         setErrorMensaje(data.message || 'Error al iniciar sesión');
       }
     } catch (error) {
       console.error('Error en la solicitud:', error);
       setErrorMensaje('Ocurrió un error al conectar con el servidor');
+    }
+  };
+
+  const handleReenviarConfirmacion = async () => {
+    const emailLimpio = String(email || '').trim().toLowerCase();
+
+    if (!emailLimpio) {
+      setErrorMensaje('Ingresa tu correo para reenviar el mensaje de confirmación.');
+      return;
+    }
+
+    setReenviandoConfirmacion(true);
+    setErrorMensaje('');
+    setReenvioMensaje('');
+
+    try {
+      const response = await fetch(API_URL + '/usuario/reenviar-confirmacion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: emailLimpio })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMensaje(data.message || 'No se pudo reenviar el correo de confirmación.');
+        return;
+      }
+
+      setReenvioMensaje(
+        data.message || 'Correo de confirmación reenviado. Revisa tu bandeja de entrada.'
+      );
+    } catch (error) {
+      console.error('Error reenviando confirmación:', error);
+      setErrorMensaje('Ocurrió un error al reenviar el correo de confirmación.');
+    } finally {
+      setReenviandoConfirmacion(false);
     }
   };
 
@@ -89,6 +136,28 @@ export const InitForm = () => {
         {errorMensaje && (
           <div className="mb-4 text-red-400 text-center font-semibold text-sm sm:text-base">
             {errorMensaje}
+          </div>
+        )}
+
+        {mostrarReenviarConfirmacion && (
+          <div className="mb-4 flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={handleReenviarConfirmacion}
+              disabled={reenviandoConfirmacion || !String(email || '').trim()}
+              className="px-4 py-2 rounded-lg bg-[#ffbf30] text-[#12143d] font-semibold disabled:opacity-60"
+            >
+              {reenviandoConfirmacion ? 'Enviando...' : 'Reenviar correo de confirmación'}
+            </button>
+            <p className="text-xs sm:text-sm text-[#c9c9d6] text-center">
+              Si no recibiste el correo, puedes enviarlo nuevamente.
+            </p>
+          </div>
+        )}
+
+        {reenvioMensaje && (
+          <div className="mb-4 text-green-400 text-center font-semibold text-sm sm:text-base">
+            {reenvioMensaje}
           </div>
         )}
 
@@ -116,7 +185,7 @@ export const InitForm = () => {
               <input
                 id="password"
                 type={mostrarContrasena ? 'text' : 'password'}
-                placeholder="********"
+                placeholder="****"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#404270] border-none text-[#f0f0f0] focus:ring-2 focus:ring-[#5445ff] outline-none pr-12 text-sm sm:text-base"
