@@ -69,12 +69,12 @@ export const CrearUsuario = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-800/80 px-6 py-20">
-      <div className="w-full max-w-xl bg-[#12143d] text-[#f0f0f0] rounded-2xl shadow-2xl p-10">
-        <h2 className="text-4xl font-bold mb-6 text-center text-[#ffbf30]">Crear Cuenta</h2>
-        <form className="space-y-5" onSubmit={handleSubmit}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-800/80 px-4 sm:px-6 py-16 sm:py-20">
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-xl bg-[#12143d] text-[#f0f0f0] rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-center text-[#ffbf30]">Crear Cuenta</h2>
+        <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-base mb-1">Nombre</label>
+            <label className="block text-sm sm:text-base mb-1">Nombre</label>
             <input
               name="nombre"
               type="text"
@@ -82,12 +82,12 @@ export const CrearUsuario = () => {
               value={formData.nombre}
               onChange={handleChange}
               required
-              className="w-full px-5 py-3 rounded-xl bg-[#404270] text-[#f0f0f0]"
+              className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#404270] text-[#f0f0f0] text-sm sm:text-base"
             />
           </div>
 
           <div>
-            <label className="block text-base mb-1">Apellidos</label>
+            <label className="block text-sm sm:text-base mb-1">Apellidos</label>
             <input
               name="apellido"
               type="text"
@@ -95,12 +95,12 @@ export const CrearUsuario = () => {
               value={formData.apellido}
               onChange={handleChange}
               required
-              className="w-full px-5 py-3 rounded-xl bg-[#404270] text-[#f0f0f0]"
+              className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#404270] text-[#f0f0f0] text-sm sm:text-base"
             />
           </div>
 
           <div>
-            <label className="block text-base mb-1">Correo Electrónico</label>
+            <label className="block text-sm sm:text-base mb-1">Correo Electrónico</label>
             <input
               name="email"
               type="email"
@@ -108,12 +108,12 @@ export const CrearUsuario = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-5 py-3 rounded-xl bg-[#404270] text-[#f0f0f0]"
+              className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#404270] text-[#f0f0f0] text-sm sm:text-base"
             />
           </div>
 
           <div>
-            <label className="block text-base mb-2">Contraseña</label>
+            <label className="block text-sm sm:text-base mb-2">Contraseña</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -122,12 +122,12 @@ export const CrearUsuario = () => {
                 onChange={handleChange}
                 required
                 placeholder="Contraseña"
-                className="w-full px-5 py-3 pr-12 rounded-xl bg-[#404270] text-[#f0f0f0]"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 pr-12 rounded-xl bg-[#404270] text-[#f0f0f0] text-sm sm:text-base"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-white"
+                className="absolute right-3 top-2.5 sm:top-3 text-white text-sm"
               >
                 👁️
               </button>
@@ -135,7 +135,7 @@ export const CrearUsuario = () => {
           </div>
 
           <div>
-            <label className="block text-base mb-2">Confirmar Contraseña</label>
+            <label className="block text-sm sm:text-base mb-2">Confirmar Contraseña</label>
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
@@ -144,27 +144,31 @@ export const CrearUsuario = () => {
                 onChange={handleChange}
                 required
                 placeholder="Confirmar Contraseña"
-                className="w-full px-5 py-3 pr-12 rounded-xl bg-[#404270] text-[#f0f0f0]"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 pr-12 rounded-xl bg-[#404270] text-[#f0f0f0] text-sm sm:text-base"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-3 text-white"
+                className="absolute right-3 top-2.5 sm:top-3 text-white text-sm"
               >
                 👁️
               </button>
             </div>
           </div>
-
           <button
             type="submit"
-            className="w-full bg-[#ffbf30] text-[#12141a] font-bold rounded-xl py-3 text-lg"
+            className="w-full bg-[#ffbf30] text-[#12141a] font-bold rounded-xl py-2.5 sm:py-3 text-base sm:text-lg"
           >
             Registrarse
           </button>
         </form>
-
-        <p className="mt-6 text-sm text-center">
+        <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-center">
+          Al crear tu usuario aceptas nuestros{" "}
+          <a href="/terminos-y-condiciones" className="text-[#ffbf30] font-medium">
+            Términos y Condiciones
+          </a>
+        </p>
+        <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-center">
           ¿Ya tienes cuenta?{" "}
           <a href="/iniciarSesion" className="text-[#ffbf30] font-medium">
             Inicia Sesión

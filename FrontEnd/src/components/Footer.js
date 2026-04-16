@@ -1,5 +1,6 @@
+// Cambios en src/components/Footer.js
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaFacebook, FaInstagram, FaEnvelope, FaHeart, FaPhone, FaWhatsapp } from 'react-icons/fa';
 import '../CSS/footer.css';
 
@@ -14,10 +15,8 @@ const Footer = () => {
     window.open('https://wa.me/50685690514');
   };
 
-  // Función para navegar y hacer scroll al top
   const handleNavigation = (path) => {
     navigate(path);
-    // Timeout pequeño para asegurar que la navegación ocurra primero
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
@@ -28,7 +27,6 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto px-4">
         <div className="footer-grid grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           
-          {/* Logo y descripción */}
           <div className="footer-section text-center md:text-left">
             <h3 className="text-xl font-bold text-yellow-500 mb-4">Komuness</h3>
             <p className="text-gray-300 mb-4 leading-relaxed">
@@ -43,7 +41,6 @@ const Footer = () => {
             </button>
           </div>
 
-          {/* Enlaces rápidos */}
           <div className="footer-section text-center">
             <h4 className="text-lg font-semibold mb-4 text-white">Enlaces Rápidos</h4>
             <ul className="space-y-3 flex flex-col items-center md:items-start">
@@ -71,21 +68,13 @@ const Footer = () => {
                   Emprendimientos
                 </button>
               </li>
-              <li>
-                <button 
-                  onClick={() => handleNavigation('/acerca-de')}
-                  className="footer-link text-gray-300 hover:text-white transition-colors duration-200 inline-block"
-                >
-                  ¿Quiénes Somos?
-                </button>
-              </li>
+
             </ul>
           </div>
+
           <div className="footer-section text-center md:text-left">
             <h4 className="text-lg font-semibold mb-4 text-white">Contáctanos</h4>
             <div className="footer-contact space-y-3 text-gray-300">
-              
-              {/* Email - Clicable */}
               <div className="flex justify-center md:justify-start items-center space-x-2">
                 <FaEnvelope className="text-red-400 flex-shrink-0" size={16} />
                 <a 
@@ -96,7 +85,6 @@ const Footer = () => {
                 </a>
               </div>
 
-              {/* Teléfono - Clicable */}
               <div className="flex flex-col space-y-2 items-center md:items-start">
                 <div className="flex justify-center md:justify-start items-center space-x-2">
                   <FaPhone className="text-green-400 flex-shrink-0" size={16} />
@@ -108,7 +96,6 @@ const Footer = () => {
                   </button>
                 </div>
                 
-                {/* Botón de WhatsApp */}
                 <button 
                   onClick={handleWhatsAppClick}
                   className="contact-button bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center justify-center space-x-2 w-fit"
@@ -118,7 +105,6 @@ const Footer = () => {
                 </button>
               </div>
 
-              {/* Redes Sociales */}
               <div className="flex justify-center md:justify-start space-x-4 pt-2">
                 <a 
                   href="https://www.facebook.com/komuness" 
@@ -150,8 +136,26 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Línea separadora y créditos */}
-        <div className="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+        <div className="footer-bottom border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+          
+          <div className="legal-links mb-3">
+            <button
+              onClick={() => handleNavigation('/tutoriales')}
+              className="footer-link legal-link text-gray-300 hover:text-white transition-colors duration-200"
+            >
+              Tutoriales
+            </button>
+          </div>
+
+          <div className="legal-links mb-3">
+            <button
+              onClick={() => handleNavigation('/terminos-y-condiciones')}
+              className="footer-link legal-link text-gray-300 hover:text-white transition-colors duration-200"
+            >
+              Términos y condiciones
+            </button>
+          </div>
+
           <div className="flex items-center justify-center space-x-2">
             <span>Hecho con</span>
             <FaHeart className="text-red-500" />

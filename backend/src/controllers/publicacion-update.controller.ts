@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { IPublicacion, IPublicacionUpdate, IEditHistory, IEnlaceExterno, IAdjunto } from '../interfaces/publicacion.interface';
+import { IPublicacion, IPublicacionUpdate, IEditHistory, IEnlaceExterno, IAdjunto, IUbicacion } from '../interfaces/publicacion.interface';
 import { modelPublicacion } from '../models/publicacion.model';
 import mongoose from 'mongoose';
 import { saveMulterFileToGridFS } from '../utils/gridfs';
@@ -71,6 +71,17 @@ export const requestUpdatePublicacion = async (req: Request, res: Response): Pro
       const precio = parsePrecio(req.body.precio);
       if (precio !== undefined) updateData.precio = precio;
     }
+
+    if (req.body.precioNegociable !== undefined) {
+      updateData.precioNegociable = parseBoolean(req.body.precioNegociable) === true;
+    }
+
+    if (req.body.moneda !== undefined || req.body.monedaSimbolo !== undefined) {
+      const monedaData = getMonedaData(req.body.moneda, req.body.monedaSimbolo);
+      updateData.moneda = monedaData.moneda;
+      updateData.monedaSimbolo = monedaData.monedaSimbolo;
+    }
+
     if (req.body.precioEstudiante !== undefined) {
       const precioEstudiante = parsePrecio(req.body.precioEstudiante);
       if (precioEstudiante !== undefined) updateData.precioEstudiante = precioEstudiante;
@@ -78,6 +89,19 @@ export const requestUpdatePublicacion = async (req: Request, res: Response): Pro
     if (req.body.precioCiudadanoOro !== undefined) {
       const precioCiudadanoOro = parsePrecio(req.body.precioCiudadanoOro);
       if (precioCiudadanoOro !== undefined) updateData.precioCiudadanoOro = precioCiudadanoOro;
+    }
+
+    // Procesar ubicación
+    if (req.body.ubicacion !== undefined) {
+      const ubicacion = parseUbicacion(req.body.ubicacion);
+      if (ubicacion !== undefined) {
+        updateData.ubicacion = ubicacion;
+      }
+    }
+    if (publicacion.tag === 'emprendimiento' && updateData.precioNegociable === true) {
+      updateData.precio = undefined;
+      updateData.precioEstudiante = undefined;
+      updateData.precioCiudadanoOro = undefined;
     }
 
     // Procesar enlaces externos
@@ -270,6 +294,9 @@ function mapUpdateFields(updateFields: Omit<IPublicacionUpdate, 'requestedAt' | 
   if (updateFields.fechaEvento !== undefined) mapped.fechaEvento = updateFields.fechaEvento;
   if (updateFields.horaEvento !== undefined) mapped.horaEvento = updateFields.horaEvento;
   if (updateFields.precio !== undefined) mapped.precio = updateFields.precio;
+  if (updateFields.moneda !== undefined) mapped.moneda = updateFields.moneda;
+  if (updateFields.monedaSimbolo !== undefined) mapped.monedaSimbolo = updateFields.monedaSimbolo;
+  if (updateFields.precioNegociable !== undefined) mapped.precioNegociable = updateFields.precioNegociable;
   if (updateFields.precioEstudiante !== undefined) mapped.precioEstudiante = updateFields.precioEstudiante;
   if (updateFields.precioCiudadanoOro !== undefined) mapped.precioCiudadanoOro = updateFields.precioCiudadanoOro;
   if (updateFields.telefono !== undefined) mapped.telefono = updateFields.telefono;
@@ -336,6 +363,32 @@ export const approveUpdate = async (req: Request, res: Response): Promise<void> 
     if (updateFields.precio !== undefined && updateFields.precio !== publicacion.precio) {
       publicacion.precio = updateFields.precio;
       camposActualizados.push('precio');
+    }
+
+    if (updateFields.precioNegociable !== undefined && updateFields.precioNegociable !== publicacion.precioNegociable) {
+      publicacion.precioNegociable = updateFields.precioNegociable;
+      camposActualizados.push('precioNegociable');
+    }
+
+    if (updateFields.moneda !== undefined && updateFields.moneda !== publicacion.moneda) {
+      publicacion.moneda = updateFields.moneda;
+      publicacion.monedaSimbolo = updateFields.moneda === 'USD' ? '$' : '₡';
+      camposActualizados.push('moneda');
+    }
+
+    if (publicacion.tag === 'emprendimiento' && updateFields.precioNegociable === true) {
+      if (publicacion.precio !== undefined) {
+        publicacion.precio = undefined;
+        camposActualizados.push('precio');
+      }
+      if (publicacion.precioEstudiante !== undefined) {
+        publicacion.precioEstudiante = undefined;
+        camposActualizados.push('precioEstudiante');
+      }
+      if (publicacion.precioCiudadanoOro !== undefined) {
+        publicacion.precioCiudadanoOro = undefined;
+        camposActualizados.push('precioCiudadanoOro');
+      }
     }
 
     if (updateFields.precioEstudiante !== undefined && updateFields.precioEstudiante !== publicacion.precioEstudiante) {
@@ -574,4 +627,68 @@ function parsePrecio(input: any): number | undefined {
     return Number.isFinite(n) ? n : undefined;
   }
   return undefined;
+}
+
+// Función auxiliar para parsear ubicación
+function parseUbicacion(input: any): IUbicacion | undefined {
+  if (!input) return undefined;
+  try {
+    let ubicacion: any;
+    
+    // Si es string (JSON), parsear
+    if (typeof input === 'string') {
+      ubicacion = JSON.parse(input);
+    } else {
+      ubicacion = input;
+    }
+    
+    // Validar que tenga los campos necesarios
+    if (!ubicacion || typeof ubicacion !== 'object') return undefined;
+    
+    const lat = Number(ubicacion.latitude);
+    const lng = Number(ubicacion.longitude);
+    const dir = String(ubicacion.direccion).trim();
+    
+    // Validar rango de coordenadas válidas
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) return undefined;
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) return undefined;
+    if (dir.length === 0 || dir.length > 500) return undefined;
+    
+    return {
+      latitude: lat,
+      longitude: lng,
+      direccion: dir,
+      mapLink: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`
+    };
+  } catch {
+    return undefined;
+  }
+}
+function parseBoolean(input: any): boolean | undefined {
+  if (input === undefined || input === null || input === '') return undefined;
+  if (typeof input === 'boolean') return input;
+  if (typeof input === 'string') {
+    const normalized = input.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') return true;
+    if (normalized === 'false' || normalized === '0') return false;
+  }
+  return undefined;
+}
+
+function parseMoneda(input: any): 'CRC' | 'USD' | undefined {
+  if (input === undefined || input === null) return undefined;
+  if (typeof input !== 'string') return undefined;
+  const normalized = input.trim().toUpperCase();
+  if (normalized === 'CRC' || normalized === 'USD') return normalized;
+  return undefined;
+}
+
+function getMonedaData(inputMoneda: any, inputMonedaSimbolo: any): { moneda: 'CRC' | 'USD'; monedaSimbolo: '₡' | '$' } {
+  const moneda = parseMoneda(inputMoneda)
+    ?? (inputMonedaSimbolo === '$' ? 'USD' : 'CRC');
+
+  return {
+    moneda,
+    monedaSimbolo: moneda === 'USD' ? '$' : '₡',
+  };
 }

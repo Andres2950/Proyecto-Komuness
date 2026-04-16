@@ -3,12 +3,12 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { API_URL, BASE_URL } from '../utils/api';
 import '../CSS/perfilPublico.css';
 import { 
-  FaPhone, FaEnvelope, FaMapMarkerAlt, FaLinkedin, FaTwitter, 
+  FaLinkedin, FaTwitter, 
   FaInstagram, FaFacebook, FaDownload, FaMoon, FaSun, FaCheck, 
-  FaStar, FaAward, FaBriefcase, FaGraduationCap, FaUser,
+  FaBriefcase, FaGraduationCap, FaUser,
   FaProjectDiagram, FaGlobe, FaCalendarAlt
 } from 'react-icons/fa';
-import { AiOutlineUser, AiOutlinePhone, AiOutlineEnvironment, AiOutlineMail } from 'react-icons/ai';
+import { AiOutlinePhone, AiOutlineEnvironment, AiOutlineMail } from 'react-icons/ai';
 
 const PerfilPublico = () => {
   const { id } = useParams();
@@ -22,6 +22,7 @@ const PerfilPublico = () => {
 
   useEffect(() => {
     cargarPerfil();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, modo]);
 
   const cargarPerfil = async () => {

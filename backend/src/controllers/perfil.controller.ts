@@ -396,3 +396,55 @@ export const actualizarCorreoPrincipal = async (req: Request, res: Response): Pr
     });
   }
 };
+
+/**
+ * Obtener mi perfil completo (usuario autenticado)
+ * @route GET /api/perfil/usuario/elegibilidad-banco
+ */
+export const validacionParaBanco = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user._id;
+
+    let perfil = await modelPerfil.findOne({ usuarioId: userId }).select('nombre apellidos telefono canton provincia fotoPerfil ocupacionPrincipal formacionAcademica').lean();
+
+    // Si no encuentra el perfil, retorna un error
+    if (!perfil) {
+      res.status(404).json({message: 'Este perfil público no existe'});
+      return;
+    }
+
+
+    const faltantes = [];
+
+    // Valida que tenga la información correspondiente para entrar al banco 
+    if (!perfil.nombre) faltantes.push('Nombre');
+    if (!perfil.apellidos) faltantes.push('Apellidos');
+    if (!perfil.telefono) faltantes.push('Teléfono');
+    if (!perfil.canton) faltantes.push('Cantón');
+    if (!perfil.provincia) faltantes.push('Provincia');
+    if (!perfil.fotoPerfil) faltantes.push('Foto de perfil');
+    if (!perfil.ocupacionPrincipal) faltantes.push('Ocupación principal');
+    if (!perfil.formacionAcademica?.length) faltantes.push('Formación académica');
+
+    if (perfil && faltantes.length > 0) {
+      res.status(200).json({
+        success: false,
+        message: 'Debes completar tu perfil antes de unirte al banco',
+        data: faltantes
+      });
+      return 
+    }
+      
+    //En el caso de que sí pueda unirse, retorna con éxito
+    res.status(200).json({ 
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Error en obtenerMiPerfil:', error);
+    res.status(500).json({
+      message: 'Error al obtener el perfil',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+};

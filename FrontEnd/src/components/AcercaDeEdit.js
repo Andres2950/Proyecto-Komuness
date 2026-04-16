@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useAuth } from './context/AuthContext';
 import { API_URL } from '../utils/api';
 import { toast } from 'react-hot-toast';
 import { 
@@ -48,7 +47,6 @@ const AcercaDeEdit = ({ data, onUpdate, onCancel }) => {
   });
 
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
 
   // Generar IDs únicos para formularios
   const formIds = useMemo(() => ({
