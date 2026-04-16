@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PublicacionModal from "./publicacionModal";
 import { useAuth } from "./context/AuthContext";
 import CategoriaBadge from "./categoriaBadge";
 import ProfileErrorModal from "./ProfileErrorModal"; 
-import { API_URL } from '../utils/api';
+import { API_URL, BASE_URL } from '../utils/api';
 
-export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
+export const PublicacionCard = ({ publicacion }) => {
    // ========== FUNCIÓN FORMATFECHA CORREGIDA ==========
   // MODIFICACIÓN: Se corrigió el problema de zona horaria
   // que causaba que las fechas se mostraran un día después
@@ -48,39 +48,28 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
   // ========== FIN DE MODIFICACIÓN ==========
 
   const navigate = useNavigate();
-  const location = useLocation();
+  const [selectedPub, setSelectedPub] = useState(false);
   const { user } = useAuth();
   
   // Estados para controlar el modal de error de perfil
   const [showProfileError, setShowProfileError] = useState(false);
   const [errorType, setErrorType] = useState('private');
 
-  const getCurrencyMeta = (pub) => {
-    const moneda = pub?.moneda === "USD" ? "USD" : "CRC";
-    if (moneda === "USD") {
-      return { symbol: "$", locale: "en-US" };
-    }
-    return { symbol: "₡", locale: "es-CR" };
-  };
-
-  const formatPrecioCard = (precio, pub) => {
+  const formatPrecioCard = (precio) => {
     if (precio === 0 || precio === '0') return 'Gratis';
     if (Number.isFinite(Number(precio))) {
-      const currency = getCurrencyMeta(pub);
-      return `${currency.symbol} ${Number(precio).toLocaleString(currency.locale)}`;
+      return `₡ ${Number(precio).toLocaleString("es-CR")}`;
     }
     return 'No especificado';
   };
 
   const handleClick = () => {
-    navigate(`/publicaciones/${publicacion._id}`, {
-      state: {from: location.pathname + location.search}
-    });
+    navigate(`/publicaciones/${publicacion._id}`);
   };
 
   const handleDeleteClick = (e) => {
     e.stopPropagation(); // Evita que se active el navigate
-    onDeleteClick(publicacion);
+    setSelectedPub(true);
   };
 
   // ========== FUNCIÓN PARA MANEJAR CLIC EN PERFIL ==========
@@ -153,11 +142,8 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
   // === PRECIO (normalizado) ===
   const rawPrecio = publicacion?.precio ?? publicacion?.Precio;
   const precio = Number(rawPrecio);
-  const precioNegociable =
-    publicacion.tag === "emprendimiento" && publicacion?.precioNegociable === true;
   const mostrarPrecio =
     (publicacion.tag === "evento" || publicacion.tag === "emprendimiento") &&
-    !precioNegociable &&
     Number.isFinite(precio);
 
   return (
@@ -180,16 +166,7 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
           {mostrarPrecio && (
             <div className="absolute top-2 left-2 z-10">
               <span className="px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-semibold shadow md:px-2 md:py-1 md:text-xs">
-                {formatPrecioCard(precio, publicacion)}
-              </span>
-            </div>
-          )}
-
-          {/* Chip de precio negociable */}
-          {precioNegociable && (
-            <div className="absolute top-2 left-2 z-10">
-              <span className="px-1.5 py-0.5 rounded bg-amber-600 text-white text-[10px] font-semibold shadow md:px-2 md:py-1 md:text-xs">
-                Precio negociable
+                {formatPrecioCard(precio)}
               </span>
             </div>
           )}
@@ -238,10 +215,6 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
             {publicacion.tag === "emprendimiento" && (
               <div className="card-details">
                 <h3 className="titulo">{publicacion.titulo}</h3>
-                <div className="tweet-content mb-2">
-                  <p className="text-white">{publicacion.contenidoBreve}</p>
-                </div>
-                <hr className="my-3 w-full border-gray-300" />
                 <p className="fecha">
                   Creador por:{" "}
                   <span
@@ -255,60 +228,49 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
               </div>
             )}
 
-            {/* Otros (p.ej. evento) */}
-            {publicacion.tag !== "publicacion" && publicacion.tag !== "emprendimiento" && (
-              <div className="card-details">
-                <h3 className="titulo">{publicacion.titulo}</h3>     
-		            <div className="tweet-content mb-2">
-                  <p className="text-white">{publicacion.contenidoBreve}</p>
-                </div>
-                <hr className="my-3 w-full border-gray-300" />
-		            <p className="fecha">
-                  Publicado por:{" "}
-                  <span
-                    className="text-white hover:text-blue-100 cursor-pointer hover:underline"
-                    onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
-                  >
-                    {publicacion.autor?.nombre || "Desconocido"}
-                  </span>
-                </p>
-                <p className="fecha">
-                  Fecha del evento:{" "}
-                  {formatFecha(publicacion.fechaEvento || publicacion.fecha)}
-                </p>
-              </div>
-            )}
+              {/* Otros (p.ej. evento) */}
+              {publicacion.tag !== "publicacion" &&
+                  publicacion.tag !== "emprendimiento" && (
+                  <div className="card-details">
+                      <h3 className="titulo">{publicacion.titulo}</h3>
+                      <p className="fecha">
+                      Publicado por:{" "}
+                      <span
+                        className="text-white hover:text-blue-100 cursor-pointer hover:underline"
+                        onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
+                      >
+                        {publicacion.autor?.nombre || "Desconocido"}
+                      </span>
+                      </p>
+                      <p className="fecha">
+                      Fecha del evento:{" "}
+                      {formatFecha(publicacion.fechaEvento || publicacion.fecha)}
+                      </p>
+                  </div>
+                  )}
 
               {/* Publicación estilo tweet */}
               {publicacion.tag === "publicacion" && (
                   <div className="tweet">
                   <div className="tweet-header mb-2">
-                  <div className="tweet-title">
+                      <div className="tweet-user">
                       <h4
-                        className="title font-semibold text-white"
-		      >
-                          {publicacion.titulo || "Sin título"}
+                        className="user-name font-semibold text-white hover:text-blue-100 cursor-pointer hover:underline"
+                        onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
+                      >
+                          {publicacion.autor?.nombre || "Desconocido"}
                       </h4>
                       </div>
                   </div>
                   <div className="tweet-content mb-2">
-                      <p className="text-gray-700">{publicacion.contenidoBreve}</p>
+                      <p className="text-gray-700">{publicacion.titulo}</p>
                   </div>
-		  <div className="tweet-footer mt-2">
-                    <div className="tweet-user">
-                      <h4
-                        className="user-name text-white hover:text-blue-100 cursor-pointer hover:underline"
-                        onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
-                      >
-                          Publicado por: <b>{publicacion.autor?.nombre || "Desconocido"} </b>
-                      </h4>
-                    </div>
-                    <p className="tweet-date text-sm text-gray-600">
-                     Fecha: {formatFecha(publicacion.fecha)}
-                    </p>
-                  </div>      
+                  <div className="tweet-footer mt-2">
+                      <p className="tweet-date text-sm text-gray-600">
+                      Publicado el {formatFecha(publicacion.fecha)}
+                      </p>
+              </div>      
                   </div>
-
               )}
               </div>
           </div>
@@ -322,6 +284,18 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
             >
               Eliminar
             </button>
+              <PublicacionModal
+            name={publicacion.titulo}
+            date={publicacion.fecha}
+            tag={publicacion.tag}
+            id={publicacion._id}
+            isOpen={selectedPub}
+            onClose={() => setSelectedPub(false)}
+            onDelete={() => {
+              setSelectedPub(false);
+              // Aquí puedes agregar lógica adicional si necesitas
+            }}
+          />
           </div>
         )}
       </div>

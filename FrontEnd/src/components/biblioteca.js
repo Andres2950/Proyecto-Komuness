@@ -40,14 +40,6 @@ export const Biblioteca = () => {
 
   // Estados principales
   const [folderName, setFolderName] = useState(location.state?.folderName || 'Biblioteca')
-
-  // actualizar el folderName
-  useEffect(() => {
-    if (location.state?.folderName) {
-      setFolderName(location.state.folderName)
-    }
-  }, [location.state])
-
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [documentos, setDocumentos] = useState([])
   const [documentosFiltrados, setDocumentosFiltrados] = useState([])
@@ -73,55 +65,21 @@ export const Biblioteca = () => {
 
   // Configuración de dropzone
    // Aumentado a 200MB. Mantener en sync con el servidor (env LIBRARY_MAX_FILE_SIZE_MB)
-  const maxSize = 200 * 1024 * 1024 // 200 MB
-  const ALLOWED_LIBRARY_ACCEPT = {
-    'application/pdf': ['.pdf'],
-    'application/vnd.ms-excel': ['.xls'],
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-    'application/msword': ['.doc'],
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-    'application/vnd.ms-powerpoint': ['.ppt'],
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-    'text/plain': ['.txt'],
-    'image/png': ['.png'],
-    'image/jpeg': ['.jpg', '.jpeg'],  // Solo estos, no .jfif, .pjpeg, etc.
-    'image/webp': ['.webp'],
-    'application/zip': ['.zip'],
-    'application/x-rar-compressed': ['.rar'],
-    'application/x-rar': ['.rar'],
-  }
-  const ALLOWED_EXTENSIONS = new Set([
-    '.pdf', '.xls', '.xlsx', '.doc', '.docx', '.ppt', '.pptx',
-    '.txt', '.png', '.jpg', '.jpeg', '.webp', '.zip', '.rar'
-  ])
-  
-  const getExt = (filename) => {
-    return '.' + filename.split('.').pop().toLowerCase()
-  }
+   const maxSize = 200 * 1024 * 1024 // 200 MB
   const {
     acceptedFiles,
     fileRejections,
     getRootProps,
     getInputProps,
     isDragActive,
-    inputRef, // RF023: Para limpiar los archivos después de subir
+    inputRef // RF023: Para limpiar los archivos después de subir
   } = useDropzone({
     maxSize,
-    accept: ALLOWED_LIBRARY_ACCEPT,
-    validator: (file) => {
-      const ext = getExt(file.name)
-      if (!ALLOWED_EXTENSIONS.has(ext)) {
-        return { code: 'file-invalid-type', message: 'Extensión no permitida' }
-      }
-      return null
-    },
     onDropRejected: (fileRejections) => {
       fileRejections.forEach(({ file, errors }) => {
         errors.forEach(error => {
           if (error.code === 'file-too-large') {
-            toast.error(`El archivo ${file.name} es demasiado grande. Tamaño máximo permitido: 200 MB.`)
-          } else if (error.code === 'file-invalid-type') {
-            toast.error(`Tipo de archivo no permitido: ${file.name}. Permitidos: PDF, Excel, Word, PPT, TXT, PNG, JPG, WEBP, ZIP y RAR.`)
+             toast.error(`El archivo ${file.name} es demasiado grande. Tamaño máximo permitido: 201 MB.`)
           } else {
             toast.error(`Error al subir el archivo ${file.name}: ${error.message}`)
           }
@@ -493,145 +451,25 @@ export const Biblioteca = () => {
     setDocumentosFiltrados(filtrados)
   }, [nombre, etiquetaSeleccionada, documentos])
 
-
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [isMoveActive, setIsMoveActive] = useState(false);
-  
-  const toggleFileSelection = (doc) =>{
-    setSelectedFiles(prev => {
-	    const exists = prev.some(f => f.id === doc.id);
-    	if (exists) {
-	      return prev.filter(f => f.id !== doc.id);
-    	} else {
-	      return [...prev, doc];
-  	  }
-    });
-  }
-
-  /*Llamada al backedn para mover archivos de carpetas y carpetas*/
-  const handleMoveFiles = async (e) => {
-    e.preventDefault()
-
-    if (selectedFiles.length === 0) {
-      toast.error("Selecciona archivos y una carpeta destino")
-      return
-    }
-
-    const folders = selectedFiles.filter(f => f.tag === "carpeta");
-    const files = selectedFiles.filter((item) => {return item.tag !== "carpeta"})
-
-    let result;
-
-    if (files.length !== 0) {
-      const payload = {
-        fileIds: files.map(f => f.id),
-        targetFolderId: id,
-        userId: user._id,
-        userType: user.tipoUsuario,
-      }
-
-      result = await toast.promise(
-        (async () => {
-          const response = await fetch(`${API_URL}/biblioteca/move`, {
-            method: 'PUT',
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify(payload),
-          })
-
-          if (!response.ok) {
-            let body = null
-            try { body = await response.json() } catch (_) {}
-            throw new Error(body?.message || `Error al mover archivos (${response.status})`)
-          }
-
-          return response.json()
-        })(),
-    
-        {
-          loading: 'Moviendo archivos...',
-          success: (data) => {
-            setSelectedFiles([])
-            fetchFolderContents()
-            return data.message || 'Archivos movidos correctamente'
-          },
-          error: (err) => {
-            const msg = err instanceof Error ? err.message : String(err)
-            return msg.includes('Network')
-              ? 'Error de conexión al mover archivos'
-              : `Error al mover archivos: ${msg}`
-          },
-          duration: 8000,
-        }
-      )
-    }
-
-    if (folders.length !== 0){
-      const payload2 = {
-        folderIds: folders.map(f => f.id),
-        targetFolderId: id,
-        userId: user._id,
-        userType: user.tipoUsuario,
-      }
-
-      const result2 = await toast.promise(
-        (async () => {
-          const response = await fetch(`${API_URL}/biblioteca/folder/move`, {
-            method: 'PUT',
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify(payload2),
-          })
-
-          if (!response.ok){
-            let body = null;
-            try {body = await response.json() } catch (_) {}
-            throw new Error(body?.message || `Error al mover carpetas (${response.status})`);
-          }
-
-          return response.json();
-        })(),
-        {
-          loading: 'Moviendo carpetas...',
-          success: (data) => {
-            setSelectedFiles([])
-            fetchFolderContents()
-            return data.message || 'Carpetas movidas correctamente'
-          },
-          error: (err) => {
-            const msg = err instanceof Error ? err.message : String(err)
-            return msg.includes('Network')
-              ? 'Error de conexión al mover carpetas'
-              : `Error al mover carpetas: ${msg}`
-          },
-          duration: 8000,
-        }
-      )
-    }
-    try {
-      if (result && Array.isArray(result.results)) {
-        const failed = result.results.filter(r => !r.success)
-
-        failed.forEach(f => {
-          toast.error(`Error: ${f.nombre} - ${f.message}`)
-        })
-      }
-    } catch (e) {
-      console.error("Error procesando move:", e)
-    }
-  }
-
   return (
     <div className="flex flex-col items-center gap-4 bg-gray-800/80 pt-16 min-h-screen p-4 sm:p-8">
+      {/* Botón de volver */}
+      {mostrarBotonVolver() && (
+        <div className="absolute top-22 left-11 z-20">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
+          >
+            <IoMdArrowRoundBack color="black" size={25} />
+          </button>
+        </div>
+      )}
+
       {/* Título */}
       <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
         <span className="text-gray-200">Biblioteca</span>
       </h1>
-
 
       {/* Nombre de carpeta actual */}
       <p className="text-xl text-white font-semibold flex items-center gap-2">
@@ -689,59 +527,15 @@ export const Biblioteca = () => {
               <div>{files}</div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* Barra de búsqueda y filtros */}
-      <div className="flex flex-wrap justify-center gap-4 w-full max-w-6xl p-4 text-black">
-        <form className="flex flex-col md:flex-row gap-2 md:items-center w-full">
-          <input
-            type="text"
-            placeholder="Buscar por nombre..."
-            className="w-full md:w-auto flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300 shadow-sm"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-          />
-          <select
-            value={etiquetaSeleccionada}
-            onChange={handleFiltroChange}
-            className="w-full md:w-48 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Todos los archivos</option>
-            <option value="pdf">PDF</option>
-            <option value="excel">Excel</option>
-            <option value="word">Word</option>
-            <option value="ppt">PPT</option>
-            <option value="text">TXT</option>
-            <option value="img">IMG</option>
-            <option value="zip">ZIP</option>
-          </select>
-          <button
-            className="w-full focus:ring focus:outline md:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-            onClick={(e) => { 
-              e.preventDefault()
-              handleSearch()
-            }}
-          >
-            Buscar
-          </button>
-        </form>
-      </div>
-
-
-  {user && (user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
-  <div className="flex flex-col gap-2">
-  <div className="flex flex-row justify-start px-3 gap-4">
+          {/* Botón crear carpeta (solo admin/super-admin) */}
+          {(user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
+            <div className="w-full max-w-6xl px-4 py-2 text-white">
               <button
                 onClick={() => setMostrarModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-3 rounded-lg shadow flex gap-2"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-4 rounded-lg shadow"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-plus-icon lucide-folder-plus">
-                  <path d="M12 10v6"/><path d="M9 13h6"/><path 
-                  d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
-                </svg>
-                Crear carpeta
+                + Crear carpeta
               </button>
 
               {mostrarModal && (
@@ -774,73 +568,46 @@ export const Biblioteca = () => {
                   </div>
                 </div>
               )}
-
-    <button 
-      className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-3 rounded-lg shadow flex gap-2"
-      onClick={() => {if(isMoveActive) {setSelectedFiles([])} setIsMoveActive(!isMoveActive)}}
-    > 
-      {!isMoveActive ? (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-input-icon lucide-folder-input">
-          <path d="M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1"/>
-          <path d="M2 13h10"/><path d="m9 16 3-3-3-3"/>
-        </svg>
-      ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-minus-icon lucide-copy-minus">
-          <line x1="12" x2="18" y1="15" y2="15"/><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path 
-          d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-        </svg>
-      )}
-      {isMoveActive ? ("Cancelar") : ("Mover archivos")}
-    </button>
-    
-    {isMoveActive && (
-      <div>
-        <button
-          onClick={handleMoveFiles}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-3 rounded-lg shadow flex gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-check-icon lucide-folder-check">
-            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="m9 13 2 2 4-4"/>
-          </svg>
-          Mover aquí
-        </button>
-      </div>
-    )}
-  </div>
-
-  {isMoveActive && (
-    <div>
-      <div className="bg-white shadow-md rounded-xl p-4 w-full max-w-md border border-gray-200">
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
-        📂 Archivos seleccionados
-        </label>
-
-        <div className="flex flex-wrap gap-2">
-          {selectedFiles.map(file => (
-            <div
-              key={file.id}
-              className="flex items-center bg-gray-100 hover:bg-gray-200 transition px-3 py-1.5 rounded-full text-sm text-gray-700 max-w-full"
-            >
-              <span className="truncate max-w-[120px]">
-                {file.nombre}
-              </span>
             </div>
-          ))}
+          )}
         </div>
-
-      {selectedFiles.length === 0 && (
-        <p className="text-sm text-gray-400 italic text-center mt-2">
-          No hay archivos seleccionados
-        </p>
       )}
+
+      {/* Barra de búsqueda y filtros */}
+      <div className="flex flex-wrap justify-center gap-4 w-full max-w-6xl p-4 text-black">
+        <form className="flex flex-col md:flex-row gap-2 md:items-center w-full">
+          <input
+            type="text"
+            placeholder="Buscar por nombre..."
+            className="w-full md:w-auto flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300 shadow-sm"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+          />
+          <select
+            value={etiquetaSeleccionada}
+            onChange={handleFiltroChange}
+            className="w-full md:w-48 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Todos los archivos</option>
+            <option value="pdf">Pdf</option>
+            <option value="excel">Excel</option>
+            <option value="word">Word</option>
+            <option value="ppt">Ppt</option>
+            <option value="text">Texto</option>
+            <option value="img">Img</option>
+            <option value="zip">Zip</option>
+          </select>
+          <button
+            className="w-full focus:ring focus:outline md:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            onClick={(e) => { 
+              e.preventDefault()
+              handleSearch()
+            }}
+          >
+            Buscar
+          </button>
+        </form>
       </div>
-    </div>
-  )}
-  </div>
-  )}
 
       {/* Grid de documentos */}
       <div className="w-full max-w-6xl bg-white/10 rounded-xl p-4">
@@ -860,19 +627,10 @@ export const Biblioteca = () => {
                     handleOpenModal(doc)
                   }
                 }}
-		            onContextMenu={(e) => {
-          		    e.preventDefault();
-          		    if(doc.tag === 'carpeta'){
-              			handleOpenModal(doc)
-          		    }
-            		}}
-      	        isChecked={selectedFiles.some(f => f.id === doc.id)}
-            		onCheck={() => toggleFileSelection(doc)}
-                checkVisible={isMoveActive}
-                />
-              ))}
+              />
+            ))}
           </div>
-      </div>
+        </div>
         
         {/* Contador */}
         <div className="mt-2 text-center text-white text-sm">

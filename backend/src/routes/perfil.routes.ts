@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { 
   obtenerPerfilPublico, 
-  obtenerMiPerfil,
-  validacionParaBanco,
+  obtenerMiPerfil, 
   crearOActualizarPerfil,
   subirFotoPerfil,
   subirCV,
@@ -19,7 +18,6 @@ router.get('/:id', obtenerPerfilPublico); // Obtener perfil público
 
 // Rutas protegidas (requieren autenticación)
 router.get('/usuario/me', authMiddleware, obtenerMiPerfil); // Obtener mi perfil
-router.get('/usuario/elegibilidad-banco', authMiddleware, validacionParaBanco);
 router.post('/', authMiddleware, crearOActualizarPerfil); // Crear/actualizar perfil
 router.put('/foto', authMiddleware, uploadFotoPerfil.single('foto'), subirFotoPerfil); // Subir foto
 router.put('/cv', authMiddleware, uploadCV.single('cv'), subirCV); // Subir CV

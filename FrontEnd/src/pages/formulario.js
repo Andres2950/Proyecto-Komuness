@@ -1,27 +1,20 @@
 import { useState, useEffect } from "react";
 import { IoMdClose, IoMdRemove, IoMdAdd } from "react-icons/io";
+import { useAuth } from "../components/context/AuthContext";
 import { API_URL } from "../utils/api";
 import { toast } from "react-hot-toast";
 import CategoriaSelector from '../components/categoriaSelector';
 import AlertaLimitePublicaciones from '../components/AlertaLimitePublicaciones';
 import '../CSS/formularioPublicacion.css';
-import MapaUbicacion from '../components/MapaUbicacion';
-import TextAreaComponent from '../components/TextAreaComponent';
 
 export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
+  const { user } = useAuth();
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
   const [enlacesExternos, setEnlacesExternos] = useState([{ nombre: '', url: '' }]);
-  const [ubicacion, setUbicacion] = useState({
-    latitude: 9.7489,
-    longitude: -83.7534,
-    direccion: 'San José, Costa Rica',
-    mapLink: 'https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534'
-  });
 
   const valoresIniciales = {
     titulo: "",
     contenido: "",
-    contenidoBreve: "",
     autor: "",
     fecha: new Date().toLocaleDateString(),
     archivos: [],
@@ -31,8 +24,6 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     fechaEvento: "",
     horaEvento: "",   // <-- NUEVO
     precio: "",
-    moneda: "CRC",
-    precioNegociable: false,
     precioEstudiante: "",
     precioCiudadanoOro: "",
     telefono: "",
@@ -49,7 +40,6 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
       setFormData({ 
         titulo: "",
         contenido: "",
-	contenidoBreve: "",
         autor: "",
         fecha: new Date().toLocaleDateString(),
         archivos: [],
@@ -59,42 +49,18 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
         fechaEvento: "",
         horaEvento: "",
         precio: "",
-        moneda: "CRC",
-        precioNegociable: false,
         precioEstudiante: "",
         precioCiudadanoOro: "",
         telefono: "",
         categoria: "",
       });
       setEnlacesExternos([{ nombre: '', url: '' }]);
-          setUbicacion({
-            latitude: 9.7489,
-            longitude: -83.7534,
-            direccion: 'San José, Costa Rica',
-            mapLink: 'https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534'
-          });
     }
   }, [isOpen, openTag]); 
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const normalizedValue = type === "checkbox" ? checked : value;
-    setFormData((prev) => ({ ...prev, [name]: normalizedValue }));
-  };
-
-  const handlePrecioNegociableChange = (e) => {
-    const checked = e.target.checked;
-    setFormData((prev) => ({
-      ...prev,
-      precioNegociable: checked,
-      ...(checked
-        ? {
-            precio: "",
-            precioEstudiante: "",
-            precioCiudadanoOro: "",
-          }
-        : {}),
-    }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e) => {
@@ -137,24 +103,16 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     const data = new FormData();
     data.append("titulo", formData.titulo);
     data.append("contenido", formData.contenido);
-    data.append("contenidoBreve", formData.contenidoBreve);
     data.append("fecha", formData.fecha);
     data.append("tag", formData.tag);
     data.append("publicado", String(formData.publicado));
     data.append("fechaEvento", formData.fechaEvento || "");
     data.append("horaEvento", formData.horaEvento || ""); // <-- NUEVO
     data.append("precio", formData.precio || "");
-    data.append("moneda", formData.moneda || "CRC");
-    data.append("precioNegociable", String(formData.precioNegociable));
     data.append("precioEstudiante", formData.precioEstudiante || "");
     data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
     data.append("telefono", formData.telefono || "");
     data.append("categoria", formData.categoria || "");
-    
-    // Agregar ubicación como JSON si es un evento
-    if (formData.tag === "evento" && ubicacion) {
-      data.append("ubicacion", JSON.stringify(ubicacion));
-    }
 
       // Agregar enlaces externos como JSON
     if (enlacesValidos.length > 0) {
@@ -292,104 +250,51 @@ return (
                 required
               />
             </div>
-	    {/* Descripción corta*/}
-            <div className="campo-grupo">
-              <label className="campo-label">Descripción breve:</label>
-              <TextAreaComponent
-                name="contenidoBreve"
-                value={formData.contenidoBreve}
-                onChange={handleChange}
-                className="campo-textarea small"
-                placeholder={`Descripción breve`}
-		limit={100}
-                rows={2}
-                required
-              />
-            </div>
 
             {/* Precios para eventos y emprendimientos */}
             {(formData.tag === "evento" || formData.tag === "emprendimiento") && (
               <div className="precios-seccion">
                 <h3 className="precios-titulo">Precios</h3>
-
-                {formData.tag === "emprendimiento" && (
-                  <div className="precio-negociable-box">
-                    <div className="precio-negociable-header">
-                      <input
-                        id="precioNegociableCrear"
-                        type="checkbox"
-                        name="precioNegociable"
-                        checked={formData.precioNegociable === true}
-                        onChange={handlePrecioNegociableChange}
-                        className="precio-negociable-checkbox"
-                      />
-                      <label htmlFor="precioNegociableCrear" className="precio-negociable-label">
-                        Precio negociable
-                      </label>
-                    </div>
-                    <p className="precio-negociable-help">
-                      Si activas esta opción, no se mostrará un precio fijo en el emprendimiento.
-                    </p>
-                  </div>
-                )}
                 
-                {(formData.tag === "evento" || !formData.precioNegociable) && (
-                  <>
-                    <div className="campo-grupo">
-                      <label className="campo-label">Moneda *:</label>
-                      <select
-                        name="moneda"
-                        value={formData.moneda}
-                        onChange={handleChange}
-                        className="campo-select"
-                        required
-                      >
-                        <option value="CRC">Colones (₡)</option>
-                        <option value="USD">Dólares ($)</option>
-                      </select>
-                    </div>
+                {/* Precio Regular */}
+                <div className="campo-grupo">
+                  <label className="campo-label">Precio regular *:</label>
+                  <input
+                    type="number"
+                    name="precio"
+                    value={formData.precio}
+                    onChange={handleChange}
+                    className="campo-input"
+                    required
+                    placeholder="Ej: 10000"
+                  />
+                </div>
 
-                    {/* Precio Regular */}
-                    <div className="campo-grupo">
-                      <label className="campo-label">Precio regular *:</label>
-                      <input
-                        type="number"
-                        name="precio"
-                        value={formData.precio}
-                        onChange={handleChange}
-                        className="campo-input"
-                        required
-                        placeholder="Ej: 10000"
-                      />
-                    </div>
+                {/* Precio Estudiante */}
+                <div className="campo-grupo">
+                  <label className="campo-label">Precio estudiante (opcional):</label>
+                  <input
+                    type="number"
+                    name="precioEstudiante"
+                    value={formData.precioEstudiante}
+                    onChange={handleChange}
+                    className="campo-input"
+                    placeholder="Ej: 5000"
+                  />
+                </div>
 
-                    {/* Precio Estudiante */}
-                    <div className="campo-grupo">
-                      <label className="campo-label">Precio estudiante (opcional):</label>
-                      <input
-                        type="number"
-                        name="precioEstudiante"
-                        value={formData.precioEstudiante}
-                        onChange={handleChange}
-                        className="campo-input"
-                        placeholder="Ej: 5000"
-                      />
-                    </div>
-
-                    {/* Precio Ciudadano de Oro */}
-                    <div className="campo-grupo">
-                      <label className="campo-label">Precio ciudadano de oro (opcional):</label>
-                      <input
-                        type="number"
-                        name="precioCiudadanoOro"
-                        value={formData.precioCiudadanoOro}
-                        onChange={handleChange}
-                        className="campo-input"
-                        placeholder="Ej: 7000"
-                      />
-                    </div>
-                  </>
-                )}
+                {/* Precio Ciudadano de Oro */}
+                <div className="campo-grupo">
+                  <label className="campo-label">Precio ciudadano de oro (opcional):</label>
+                  <input
+                    type="number"
+                    name="precioCiudadanoOro"
+                    value={formData.precioCiudadanoOro}
+                    onChange={handleChange}
+                    className="campo-input"
+                    placeholder="Ej: 7000"
+                  />
+                </div>
               </div>
             )}
 
@@ -522,14 +427,6 @@ return (
                     onChange={handleChange}
                     className="campo-input"
                     required
-                  />
-                </div>
-
-                {/* Mapa para seleccionar ubicación del evento */}
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <MapaUbicacion
-                    onLocationSelect={setUbicacion}
-                    initialLocation={ubicacion}
                   />
                 </div>
               </>

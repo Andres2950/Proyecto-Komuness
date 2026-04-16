@@ -8,30 +8,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendEmail = void 0;
-// src/utils/mail.ts
-const nodemailer_1 = require("nodemailer");
-const transporter = (0, nodemailer_1.createTransport)({
-    service: 'zoho',
-    host: 'smtp.zoho.com',
-    port: 2525,
-    secure: false,
+const nodemailer_1 = __importDefault(require("nodemailer"));
+const transporter = nodemailer_1.default.createTransport({
+    service: 'gmail',
     auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false,
+        user: process.env.EMAIL || 'proyecto.komuness@gmail.com',
+        pass: process.env.GMAIL_APPKEY
     },
 });
 const sendEmail = (to, subject, text) => __awaiter(void 0, void 0, void 0, function* () {
     const mailOptions = {
-        from: process.env.MAIL_USER || 'komuness334@zohomail.com',
+        from: 'Proyecto-Komuness',
         to,
         subject,
-        text, // mantengo texto plano; si quieres HTML, cambia a 'html'
+        text,
     };
-    yield transporter.sendMail(mailOptions);
+    try {
+        let response = yield transporter.sendMail(mailOptions);
+        console.log('Correo electrónico enviado:', response.messageId);
+    }
+    catch (error) {
+        console.log('Error al enviar el correo electrónico:', error);
+    }
 });
 exports.sendEmail = sendEmail;
