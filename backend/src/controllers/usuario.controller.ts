@@ -356,10 +356,10 @@ export async function enviarCorreoRecuperacion(req: Request, res: Response): Pro
 
     // setup del transporter de nodemailer para enviar correos
     const transporter = createTransport({
-        service: 'gmail',
-        //host: 'smtp.zoho.com',
-        //port: 2525,
-        //secure: false,
+        service: 'zoho',
+        host: 'smtp.zoho.com',
+        port: 2525,
+        secure: false,
         auth: {
             user: process.env.MAIL_USER,
             pass: process.env.MAIL_PASS
@@ -375,7 +375,7 @@ export async function enviarCorreoRecuperacion(req: Request, res: Response): Pro
 
     // opciones del correo electrónico con la nueva contraseña
     const mailOptions = {
-        from: `"Komuness" <${process.env.MAIL_USER}>`,
+        from: process.env.MAIL_USER || 'komuness334@zohomail.com',
         to: email,
         subject: 'Recuperación de contraseña',
         html: `

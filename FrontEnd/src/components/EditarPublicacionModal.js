@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { IoMdClose, IoMdRemove, IoMdAdd } from "react-icons/io";
+import { useAuth } from "./context/AuthContext";
 import { API_URL } from "../utils/api";
 import { toast } from "react-hot-toast";
 import CategoriaSelector from '../components/categoriaSelector';
 import '../CSS/formularioPublicacion.css';
 
 export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     titulo: "",
     contenido: "",
     fechaEvento: "",
     horaEvento: "",
     precio: "",
-    moneda: "CRC",
-    precioNegociable: false,
     precioEstudiante: "",
     precioCiudadanoOro: "",
     telefono: "",
@@ -39,8 +39,6 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
         fechaEvento: publicacion.fechaEvento || "",
         horaEvento: publicacion.horaEvento || "",
         precio: publicacion.precio !== undefined && publicacion.precio !== null ? publicacion.precio.toString() : "",
-        moneda: publicacion.moneda || (publicacion.monedaSimbolo === '$' ? 'USD' : 'CRC'),
-        precioNegociable: publicacion.precioNegociable === true,
         precioEstudiante: publicacion.precioEstudiante !== undefined && publicacion.precioEstudiante !== null ? publicacion.precioEstudiante.toString() : "",
         precioCiudadanoOro: publicacion.precioCiudadanoOro !== undefined && publicacion.precioCiudadanoOro !== null ? publicacion.precioCiudadanoOro.toString() : "",
         telefono: publicacion.telefono || "",
@@ -67,24 +65,8 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
   }, [isOpen, publicacion]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const normalizedValue = type === "checkbox" ? checked : value;
-    setFormData((prev) => ({ ...prev, [name]: normalizedValue }));
-  };
-
-  const handlePrecioNegociableChange = (e) => {
-    const checked = e.target.checked;
-    setFormData((prev) => ({
-      ...prev,
-      precioNegociable: checked,
-      ...(checked
-        ? {
-            precio: "",
-            precioEstudiante: "",
-            precioCiudadanoOro: "",
-          }
-        : {}),
-    }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e) => {
@@ -126,7 +108,6 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
     setCargando(true);
 
     try {
-
       // Crear objeto plano primero para debugging
       const datosActualizacion = {
         titulo: formData.titulo,
@@ -134,8 +115,6 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
         fechaEvento: formData.fechaEvento || "",
         horaEvento: formData.horaEvento || "",
         precio: formData.precio || "",
-        moneda: formData.moneda || "CRC",
-        precioNegociable: formData.precioNegociable === true,
         precioEstudiante: formData.precioEstudiante || "",
         precioCiudadanoOro: formData.precioCiudadanoOro || "",
         telefono: formData.telefono || "",
@@ -152,8 +131,6 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
       data.append("fechaEvento", formData.fechaEvento || "");
       data.append("horaEvento", formData.horaEvento || "");
       data.append("precio", formData.precio || "");
-      data.append("moneda", formData.moneda || "CRC");
-      data.append("precioNegociable", String(formData.precioNegociable === true));
       data.append("precioEstudiante", formData.precioEstudiante || "");
       data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
       data.append("telefono", formData.telefono || "");
@@ -166,11 +143,11 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
       data.append("imagenesMantenidas", JSON.stringify(imagenesMantenidas));
 
       // Nuevas imágenes como archivos
-      nuevasImagenes.forEach((archivo) => {
+      nuevasImagenes.forEach((archivo, index) => {
         data.append("archivos", archivo);
       });
 
-      for (const [key] of data.entries()) {
+      for (let [key, value] of data.entries()) {
         if (key === 'archivos') {
           console.log('Bien');
         } else {
@@ -372,89 +349,49 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
           {(publicacion.tag === "evento" || publicacion.tag === "emprendimiento") && (
             <div className="precios-seccion">
               <h3 className="precios-titulo">Precios</h3>
-
-              {publicacion.tag === "emprendimiento" && (
-                <div className="precio-negociable-box">
-                  <div className="precio-negociable-header">
-                    <input
-                      id="precioNegociableEditar"
-                      type="checkbox"
-                      name="precioNegociable"
-                      checked={formData.precioNegociable === true}
-                      onChange={handlePrecioNegociableChange}
-                      className="precio-negociable-checkbox"
-                    />
-                    <label htmlFor="precioNegociableEditar" className="precio-negociable-label">
-                      Precio negociable
-                    </label>
-                  </div>
-                  <p className="precio-negociable-help">
-                    Si activas esta opción, no se mostrará un precio fijo en el emprendimiento.
-                  </p>
-                </div>
-              )}
               
-              {(publicacion.tag === "evento" || !formData.precioNegociable) && (
-                <>
-                  <div className="campo-grupo">
-                    <label htmlFor="moneda" className="campo-label">Moneda *:</label>
-                    <select
-                      id="moneda"
-                      name="moneda"
-                      value={formData.moneda}
-                      onChange={handleChange}
-                      className="campo-select"
-                      required
-                    >
-                      <option value="CRC">Colones (₡)</option>
-                      <option value="USD">Dólares ($)</option>
-                    </select>
-                  </div>
+              {/* Precio Regular */}
+              <div className="campo-grupo">
+                <label htmlFor="precio" className="campo-label">Precio regular *:</label>
+                <input
+                  id="precio"
+                  type="number"
+                  name="precio"
+                  value={formData.precio}
+                  onChange={handleChange}
+                  className="campo-input"
+                  required={publicacion.tag === "evento" || publicacion.tag === "emprendimiento"}
+                  placeholder="Ej: 10000"
+                />
+              </div>
 
-                  {/* Precio Regular */}
-                  <div className="campo-grupo">
-                    <label htmlFor="precio" className="campo-label">Precio regular *:</label>
-                    <input
-                      id="precio"
-                      type="number"
-                      name="precio"
-                      value={formData.precio}
-                      onChange={handleChange}
-                      className="campo-input"
-                      required
-                      placeholder="Ej: 10000"
-                    />
-                  </div>
+              {/* Precio Estudiante*/}
+              <div className="campo-grupo">
+                <label htmlFor="precioEstudiante" className="campo-label">Precio estudiante (opcional):</label>
+                <input
+                  id="precioEstudiante"
+                  type="number"
+                  name="precioEstudiante"
+                  value={formData.precioEstudiante}
+                  onChange={handleChange}
+                  className="campo-input"
+                  placeholder="Ej: 5000"
+                />
+              </div>
 
-                  {/* Precio Estudiante*/}
-                  <div className="campo-grupo">
-                    <label htmlFor="precioEstudiante" className="campo-label">Precio estudiante (opcional):</label>
-                    <input
-                      id="precioEstudiante"
-                      type="number"
-                      name="precioEstudiante"
-                      value={formData.precioEstudiante}
-                      onChange={handleChange}
-                      className="campo-input"
-                      placeholder="Ej: 5000"
-                    />
-                  </div>
-
-                  {/* Precio Ciudadano de Oro  */}
-                  <div className="campo-grupo">
-                    <label htmlFor="precioCiudadanoOro" className="campo-label">Precio ciudadano de oro (opcional):</label>
-                    <input
-                      id="precioCiudadanoOro"
-                      type="number"
-                      name="precioCiudadanoOro"
-                      value={formData.precioCiudadanoOro}
-                      onChange={handleChange}
-                      className="campo-input"
-                      placeholder="Ej: 7000"
-                    />
-                  </div>
-                </>
-              )}
+              {/* Precio Ciudadano de Oro  */}
+              <div className="campo-grupo">
+                <label htmlFor="precioCiudadanoOro" className="campo-label">Precio ciudadano de oro (opcional):</label>
+                <input
+                  id="precioCiudadanoOro"
+                  type="number"
+                  name="precioCiudadanoOro"
+                  value={formData.precioCiudadanoOro}
+                  onChange={handleChange}
+                  className="campo-input"
+                  placeholder="Ej: 7000"
+                />
+              </div>
             </div>
           )}
 

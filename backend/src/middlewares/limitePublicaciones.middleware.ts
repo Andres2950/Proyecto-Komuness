@@ -8,12 +8,6 @@ import { modelUsuario } from '../models/usuario.model';
  * Middleware para validar si un usuario ha alcanzado su límite de publicaciones
  * Debe ejecutarse después del authMiddleware
  */
-
-const esAdminOSuperAdmin = (tipoUsuario: unknown): boolean => {
-    const rol = Number(tipoUsuario);
-    return rol === 0 || rol === 1;
-};
-
 export const validarLimitePublicaciones = async (
     req: Request,
     res: Response,
@@ -32,7 +26,7 @@ export const validarLimitePublicaciones = async (
         }
 
         // Super-admin y admin no tienen límites
-        if (esAdminOSuperAdmin(user.tipoUsuario)) {
+        if (user.tipoUsuario === 0 || user.tipoUsuario === 1) {
             next();
             return;
         }
@@ -46,31 +40,6 @@ export const validarLimitePublicaciones = async (
                 message: 'Usuario no encontrado'
             });
             return;
-        }
-        
-        const tipoUsuario = Number(usuarioCompleto.tipoUsuario);
-
-        // Bypass definitivo con dato de BD (blindaje)
-        if (esAdminOSuperAdmin(tipoUsuario)) {
-            next();
-            return;
-        }
-
-        // Validar si es usuario premium y si ha expirado su suscripción
-        if (tipoUsuario === 3) {
-            if (usuarioCompleto.fechaVencimientoPremium) {
-                const ahora = new Date();
-                const vencimiento = new Date(usuarioCompleto.fechaVencimientoPremium);
-
-                if (ahora > vencimiento) {
-                    res.status(403).json({
-                        success: false,
-                        message: 'Tu suscripción premium ha expirado. Por favor, renueva tu suscripción para continuar publicando.',
-                        fechaVencimiento: vencimiento
-                    });
-                    return;
-                }
-            }
         }
 
         // Validar si es usuario premium y si ha expirado su suscripción
@@ -98,7 +67,7 @@ export const validarLimitePublicaciones = async (
             limiteAplicable = usuarioCompleto.limitePublicaciones;
         } else {
             // 2. Obtener límite global según tipo de usuario
-            const claveConfiguracion = tipoUsuario === 3
+            const claveConfiguracion = usuarioCompleto.tipoUsuario === 3
                 ? 'limite_publicaciones_premium'
                 : 'limite_publicaciones_basico';
 
@@ -108,7 +77,7 @@ export const validarLimitePublicaciones = async (
                 limiteAplicable = configuracion.valor;
             } else {
                 // Límites por defecto si no hay configuración
-                limiteAplicable = tipoUsuario === 3 ? 50 : 10;
+                limiteAplicable = usuarioCompleto.tipoUsuario === 3 ? 50 : 10;
             }
         }
 
@@ -124,7 +93,7 @@ export const validarLimitePublicaciones = async (
                 message: `Has alcanzado el límite de ${limiteAplicable} publicaciones permitidas para tu tipo de cuenta.`,
                 limite: limiteAplicable,
                 actual: cantidadPublicaciones,
-                tipoUsuario: tipoUsuario === 3 ? 'premium' : 'básico'
+                tipoUsuario: usuarioCompleto.tipoUsuario === 3 ? 'premium' : 'básico'
             });
             return;
         }

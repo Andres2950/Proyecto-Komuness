@@ -162,7 +162,7 @@ const CheckoutPremium = () => {
       // 👉 Marcamos que empezó el procesamiento del pago
       setProcesando(true);
 
-      await actions.order.capture();
+      const details = await actions.order.capture();
      
 
       toast.success('✅ Pago realizado con éxito. Activando Premium...', {

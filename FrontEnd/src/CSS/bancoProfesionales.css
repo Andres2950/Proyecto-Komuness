@@ -388,13 +388,6 @@
   transform: translateY(-2px);
 }
 
-.toast-warning {
-  background: #fef3c7 !important;
-  color: #92400e !important;
-  border: 1px solid #fbbf24 !important;
-  font-weight: 500;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .banco-profesionales-container {
