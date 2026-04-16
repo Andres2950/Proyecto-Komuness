@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { API_URL, BASE_URL } from '../utils/api';
 import { toast } from 'react-hot-toast';
 import '../CSS/subidaArchivo.css';
-import { FaTrash, FaFileAlt, FaImage } from 'react-icons/fa';
+import { FaUpload, FaTrash, FaFileAlt, FaImage } from 'react-icons/fa';
 
 const SubidaArchivo = ({ tipo, archivoActual, onSubida }) => {
   const [subiendo, setSubiendo] = useState(false);

@@ -12,7 +12,7 @@ import {
   IoLogoWhatsapp,
   IoMdCreate  
 } from "react-icons/io";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { API_URL, getCategoriaById } from "../utils/api";
 import { EditarPublicacionModal } from './EditarPublicacionModal';
@@ -26,7 +26,6 @@ import '../CSS/publicacionDetalle.css';
 
 export const PublicacionDetalle = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const { user } = useAuth();
 
@@ -152,19 +151,10 @@ export const PublicacionDetalle = () => {
     }
   };
 
-  const getCurrencyMeta = () => {
-    const moneda = publicacion?.moneda === "USD" ? "USD" : "CRC";
-    if (moneda === "USD") {
-      return { symbol: "$", locale: "en-US" };
-    }
-    return { symbol: "₡", locale: "es-CR" };
-  };
-
   const formatPrecio = (precio) => {
     if (precio === 0 || precio === '0') return 'Gratis';
     if (Number.isFinite(Number(precio))) {
-      const currency = getCurrencyMeta();
-      return `${currency.symbol} ${Number(precio).toLocaleString(currency.locale)}`;
+      return `₡ ${Number(precio).toLocaleString("es-CR")}`;
     }
     return 'No especificado';
   };
@@ -172,10 +162,9 @@ export const PublicacionDetalle = () => {
   const precioRegular = publicacion?.precio;
   const precioEstudiante = publicacion?.precioEstudiante;
   const precioCiudadanoOro = publicacion?.precioCiudadanoOro;
-  const precioNegociable = publicacion?.precioNegociable === true;
 
   const mostrarPrecios = publicacion && 
-    (publicacion.tag === "evento" || (publicacion.tag === "emprendimiento" && !precioNegociable));
+    (publicacion.tag === "evento" || publicacion.tag === "emprendimiento");
   
 // === HORA DEL EVENTO (simple, ya viene "HH:mm") ===
     const mostrarHora =
@@ -195,7 +184,7 @@ export const PublicacionDetalle = () => {
     if (url.includes('@') && !url.startsWith('mailto:')) {
       return `mailto:${url}`;
     }
-    if (/^[\d\s\-+()]+$/.test(url.replace(/\s/g, '')) && !url.startsWith('tel:')) {
+    if (/^[\d\s\-\+\(\)]+$/.test(url.replace(/\s/g, '')) && !url.startsWith('tel:')) {
       return `tel:${url}`;
     }
     if (!url.startsWith('http://') && !url.startsWith('https://') && 
@@ -210,7 +199,7 @@ export const PublicacionDetalle = () => {
     if (url.includes('@') || url.startsWith('mailto:')) {
       return <IoMdMail className="publicacion-icon" size={14} />;
     }
-    if (url.includes('tel:') || /^[\d\s\-+()]+$/.test(url.replace(/\s/g, ''))) {
+    if (url.includes('tel:') || /^[\d\s\-\+\(\)]+$/.test(url.replace(/\s/g, ''))) {
       return <IoMdCall className="publicacion-icon" size={14} />;
     }
     if (url.includes('facebook.com')) {
@@ -251,14 +240,6 @@ export const PublicacionDetalle = () => {
   }
 
   if (!publicacion) return null;
-  
-  const handleBack = () => {
-    if (location.state?.from) {
-      navigate(location.state.from);
-    } else {
-      navigate(-1);
-    }
-  };
 
   return (
     <div className="publicacion-detalle-container">
@@ -275,7 +256,7 @@ export const PublicacionDetalle = () => {
           {/* Botón de regreso - Izquierda */}
           <button
             type="button"
-            onClick={handleBack}
+            onClick={() => navigate(-1)}
             className="publicacion-back-btn"
           >
             <IoMdArrowRoundBack color="black" size={21} />
@@ -412,13 +393,6 @@ export const PublicacionDetalle = () => {
                     </div>
                   </div>
                 )}
-
-                {publicacion.tag === "emprendimiento" && precioNegociable && (
-                  <div className="publicacion-info-item">
-                    <span className="publicacion-info-label">Precio:</span>
-                    <span className="publicacion-info-value">Negociable</span>
-                  </div>
-                )}
                  
                  {/* Fecha de evento */}
                 {publicacion.fechaEvento && (
@@ -433,24 +407,6 @@ export const PublicacionDetalle = () => {
                   <div className="publicacion-info-item">
                     <span className="publicacion-info-label">Hora del evento:</span>
                     <span className="publicacion-info-value">{publicacion.horaEvento}</span>
-                  </div>
-                )}
-
-                {/* Ubicación del evento */}
-                {publicacion?.ubicacion && (
-                  <div className="publicacion-info-item">
-                    <span className="publicacion-info-label">Ubicación:</span>
-                    <div className="publicacion-info-value">
-                      <div>{publicacion.ubicacion.direccion}</div>
-                      <a
-                        href={publicacion.ubicacion.mapLink || `https://www.openstreetmap.org/?mlat=${publicacion.ubicacion.latitude}&mlon=${publicacion.ubicacion.longitude}#map=16/${publicacion.ubicacion.latitude}/${publicacion.ubicacion.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-300 hover:text-blue-200 underline"
-                      >
-                        Ver en mapa
-                      </a>
-                    </div>
                   </div>
                 )}
                  

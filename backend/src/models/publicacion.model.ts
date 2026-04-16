@@ -1,4 +1,4 @@
-import { IComentario, IPublicacion, IEnlaceExterno, IEditHistory, IPublicacionUpdate, IUbicacion } from "@/interfaces/publicacion.interface";
+import { IComentario, IPublicacion, IEnlaceExterno, IEditHistory, IPublicacionUpdate } from "@/interfaces/publicacion.interface";
 import { IAdjunto } from "@/interfaces/publicacion.interface";
 import { model, Schema } from 'mongoose';
 
@@ -20,29 +20,17 @@ const enlaceExternoSchema = new Schema<IEnlaceExterno>({
   url: { type: String, required: true }
 });
 
-const ubicacionSchema = new Schema<IUbicacion>({
-  latitude: { type: Number, required: true },
-  longitude: { type: Number, required: true },
-  direccion: { type: String, required: true },
-  mapLink: { type: String, required: true }
-}, { _id: false });
-
 
 const publicacionUpdateSchema = new Schema<IPublicacionUpdate>({
   titulo: { type: String, required: false },
   contenido: { type: String, required: false },
-  contenidoBreve: { type: String, required: false },
   fechaEvento: { type: String, required: false },
   horaEvento: { type: String, required: false },
   precio: { type: Number, required: false },
-  moneda: { type: String, enum: ['CRC', 'USD'], required: false, default: 'CRC' },
-  monedaSimbolo: { type: String, enum: ['₡', '$'], required: false, default: '₡' },
-  precioNegociable: { type: Boolean, required: false, default: false },
   precioEstudiante: { type: Number, required: false },
   precioCiudadanoOro: { type: Number, required: false },
   enlacesExternos: { type: [enlaceExternoSchema], required: false },
   telefono: { type: String, required: false },
-  ubicacion: { type: ubicacionSchema, required: false },
   categoria: { type: Schema.Types.ObjectId, ref: 'Categoria', required: false },
   adjunto: { type: [adjuntoSchema], required: false },
   requestedAt: { type: String, required: true },
@@ -69,7 +57,6 @@ const publicacionSchema = new Schema(
   {
     titulo: { type: String, required: true },
     contenido: { type: String, required: true },
-    contenidoBreve: { type: String, required: true },
     // id del autor
     autor: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
     fecha: { type: String, required: true },
@@ -82,14 +69,10 @@ const publicacionSchema = new Schema(
     fechaEvento: { type: String, required: false },
     horaEvento:  { type: String, required: false }, 
     precio: { type: Number, required: false }, // Precio regular
-    moneda: { type: String, enum: ['CRC', 'USD'], required: false, default: 'CRC' },
-    monedaSimbolo: { type: String, enum: ['₡', '$'], required: false, default: '₡' },
-    precioNegociable: { type: Boolean, required: false, default: false },
     precioEstudiante: { type: Number, required: false },
     precioCiudadanoOro: { type: Number, required: false }, 
     enlacesExternos: { type: [enlaceExternoSchema], required: false },
     telefono: { type: String, required: false },
-    ubicacion: { type: ubicacionSchema, required: false }, // Ubicación del evento
 
     // categorías de área
     categoria: { type: Schema.Types.ObjectId, ref: 'Categoria', required: true },
