@@ -41,14 +41,14 @@ export const CategoriaFilter = () => {
 
   return (
    <div className="flex justify-end  bg-blue-900"> {/* Contenedor padre */}
-    <div className="flex items-center gap-2 p-2 mb-4">
+    <div className="flex items-center  p-4">
       <label className="text-yellow-400  p-2 font-bold text-sm">Categorías</label>
       <select
         value={selectedCategoria}
         onChange={handleCategoriaChange}
         className=" border rounded border-e-blue-900  p-2 bg-blue-900 text-gray-50 text-sm" 
       >
-        <option value="">Todas las categorías</option>
+        <option value="">Todas</option>
         {categorias.map((categoria) => (
           <option key={categoria._id} value={categoria._id}>
             {categoria.nombre.toUpperCase()}

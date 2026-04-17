@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL, BASE_URL, PROFESIONALES_API_URL } from '../utils/api'; // AGREGAR PROFESIONALES_API_URL
+import { BASE_URL, API_URL, PROFESIONALES_API_URL } from '../utils/api'; // AGREGAR PROFESIONALES_API_URL
 import { useAuth } from './context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { 
@@ -77,6 +77,13 @@ const BancoProfesionales = () => {
       return;
     }
 
+    //Verificar si puede unirse según el perfil público
+    const returnData = await cargarDatosUsuario();
+
+    if(returnData === false){
+      return;
+    }
+    
     try {
       setCargandoToggle(true);
       const response = await fetch(`${PROFESIONALES_API_URL}/banco-profesionales/toggle`, { 
@@ -86,7 +93,9 @@ const BancoProfesionales = () => {
         }
       });
 
-      if (!response.ok) throw new Error('Error al actualizar estado');
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al actualizar estado');
+      }
 
       const data = await response.json();
       setEstadoUsuario(data.data);
@@ -94,6 +103,7 @@ const BancoProfesionales = () => {
       
       // Recargar lista si se unió o retiró
       cargarProfesionales(searchTerm);
+
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al actualizar el estado');
@@ -133,6 +143,63 @@ const quitarDelBanco = async (perfilId) => {
   }
 };
 
+  //Buscar la información del usuario para verificar que tiene información suficiente para unirse al banco
+  const cargarDatosUsuario = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(`${API_URL}/perfil/usuario/elegibilidad-banco`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al cargar el perfil');
+      }
+
+      //Revisa si puede unirse al banco e imprime el mensaje de faltantes
+      if (!data.success){
+        ImprimirErroresDePerfil(data?.data);
+        return false;
+      } 
+
+      //Retorna verdadero si todo sale bien
+      return true;
+
+    } catch (error) {
+      toast.error(error?.message);
+      console.error(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //Imprime lo que hace falta
+  const ImprimirErroresDePerfil = async (data) => {
+    const faltantes = data?.data;
+
+    toast(
+      <div>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+          ⚠️ Te falta en tu perfil:
+        </div>
+
+        <ul style={{paddingLeft: 18, listStyleType: 'disc' }}>
+          {faltantes.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>,
+      {
+        className: 'toast-warning'
+      }
+    );
+  };
+
   // Búsqueda en tiempo real con debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -153,13 +220,6 @@ const quitarDelBanco = async (perfilId) => {
     <div className="banco-profesionales-container">
       {/* Header */}
       <div className="banco-header">
-        <button 
-          onClick={() => navigate(-1)}
-          className="btn-volver"
-        >
-          <FaArrowLeft /> Volver
-        </button>
-        
         <div className="banco-title-section">
           <h1>Banco de Profesionales</h1>
           <p>Encuentra profesionales calificados en nuestra comunidad</p>
@@ -236,7 +296,6 @@ const quitarDelBanco = async (perfilId) => {
             <div key={profesional._id} className="profesional-card">
               {/* Foto de perfil */}
               <div className="card-header">
-                // En la parte del avatar, reemplaza con esto:
                 <div className="avatar-container">
                 {profesional.fotoPerfil ? (
                     <img 
