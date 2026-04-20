@@ -16,6 +16,7 @@ import configuracionRoutes from "./routes/configuracion.routes";
 import filesRouter from './routes/files.routes';
 import seccionAcercaRoutes from './routes/seccionAcerca.routes';
 import perfilRoutes from './routes/perfil.routes';
+import { startPublicationExpirationJob } from './services/publicacionExpiration.service';
 
 // Rutas de PayPal
 import paypalRoutes from './routes/paypal.routes';
@@ -137,6 +138,7 @@ const port = process.env.PORT || 5000;
 // Conexión a MongoDB
 (async () => {
   await connectBD(process.env.BD_URL!);
+  startPublicationExpirationJob();
   console.log("✅ MongoDB conectado");
 })();
 
@@ -144,6 +146,7 @@ export default app;
 
 if (require.main === module) {
   connectBD(process.env.BD_URL || '').then(() => {
+    startPublicationExpirationJob();
     console.log('Connected to MongoDB');
     app.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);

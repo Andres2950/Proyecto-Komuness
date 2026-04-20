@@ -5,6 +5,7 @@ import { IAdjunto, IComentario, IEnlaceExterno, IPublicacion } from '../interfac
 import { modelPublicacion } from '../models/publicacion.model';
 import mongoose from 'mongoose';
 import { saveMulterFileToGridFS, saveBufferToGridFS, deleteGridFSFile } from '../utils/gridfs';
+import { buildActivePublicationQuery, calculatePublicationExpirationDate } from '../utils/publicacionExpiration';
 import { sendEmail } from '../utils/mail'; // usa el mismo transporter que recuperación
 import { modelUsuario } from '../models/usuario.model'; // ← Modelo de usuarios
 
@@ -288,7 +289,7 @@ export const getPublicacionesByTag = async (req: Request, res: Response): Promis
     const limit = parseInt(req.query.limit as string) || 10;
     const { tag, publicado, categoria } = req.query as { tag?: string; publicado?: string; categoria?: string };
 
-    const query: any = {};
+    const query: any = { ...buildActivePublicationQuery() };
     if (tag) query.tag = tag;
     if (publicado !== undefined) query.publicado = publicado === 'true';
     if (categoria) query.categoria = categoria;
@@ -328,7 +329,7 @@ export const getPublicacionById = async (req: Request, res: Response): Promise<v
       .populate('autor', 'nombre')
       .populate('categoria', 'nombre estado');
 
-    if (!publicacion) {
+    if (!publicacion || publicacion.estaCaducada) {
       res.status(404).json({ message: 'Publicación no encontrada' });
       return;
     }
@@ -346,7 +347,7 @@ export const getPublicacionesByCategoria = async (req: Request, res: Response): 
     const offset = parseInt(req.query.offset as string) || 0;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const query = { categoria: categoriaId, publicado: true };
+    const query: any = { categoria: categoriaId, publicado: true, ...buildActivePublicationQuery() };
 
     const [publicaciones, total] = await Promise.all([
       modelPublicacion
@@ -378,6 +379,12 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
   try {
     const { id } = req.params;
     const updatedData: Partial<IPublicacion> & Record<string, any> = { ...req.body };
+    const publicacionActual = await modelPublicacion.findById(id);
+
+    if (!publicacionActual) {
+      res.status(404).json({ message: 'Publicacion no encontrada' });
+      return;
+    }
 
     if (updatedData.hasOwnProperty('precio')) {
       const parsed = parsePrecio(updatedData.precio);
@@ -396,6 +403,12 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
       res.status(400).json({ message: 'El campo precio es obligatorio y debe ser numérico para eventos/emprendimientos.' });
       return;
     }
+
+    updatedData.fechaExpiracion =
+      calculatePublicationExpirationDate({
+        ...(publicacionActual.toObject() as IPublicacion),
+        ...updatedData,
+      }) ?? null;
 
     const publicacion = await modelPublicacion.findByIdAndUpdate(id, updatedData, { new: true });
     if (!publicacion) {
@@ -468,24 +481,32 @@ export const addComentario = async (req: Request, res: Response): Promise<void> 
 export const filterPublicaciones = async (req: Request, res: Response): Promise<void> => {
   try {
     const { texto, tag, autor } = req.query;
-    const filtro: any = {};
+    const filtro: any = { $and: [buildActivePublicationQuery()] };
+    let hasSearchCriteria = false;
 
     if (texto) {
-      filtro.$or = [
-        { titulo: { $regex: texto as string, $options: 'i' } },
-        { contenido: { $regex: texto as string, $options: 'i' } },
-      ];
+      filtro.$and.push({
+        $or: [
+          { titulo: { $regex: texto as string, $options: 'i' } },
+          { contenido: { $regex: texto as string, $options: 'i' } },
+        ],
+      });
+      hasSearchCriteria = true;
     }
-    if (tag) filtro.tag = { $regex: tag as string, $options: 'i' };
+    if (tag) {
+      filtro.tag = { $regex: tag as string, $options: 'i' };
+      hasSearchCriteria = true;
+    }
     if (autor) {
       if (!mongoose.Types.ObjectId.isValid(autor as string)) {
         res.status(400).json({ message: 'ID de autor inválido' });
         return;
       }
       filtro.autor = autor as string;
+      hasSearchCriteria = true;
     }
 
-    if (Object.keys(filtro).length === 0) {
+    if (!hasSearchCriteria) {
       res.status(400).json({ message: 'Debe proporcionar al menos un parámetro de búsqueda (titulo, tag o autor)' });
       return;
     }
@@ -516,6 +537,7 @@ export const getEventosPorFecha = async (req: Request, res: Response): Promise<v
 
     const eventos = await modelPublicacion
       .find({
+        ...buildActivePublicationQuery(),
         tag: 'evento',
         publicado: true,
         fechaEvento: {
@@ -550,6 +572,7 @@ export const searchPublicacionesByTitulo = async (req: Request, res: Response): 
 
     const publicaciones = await modelPublicacion
       .find({
+        ...buildActivePublicationQuery(),
         publicado: true,
         titulo: { $regex: searchTerm, $options: 'i' }
       })
@@ -582,14 +605,16 @@ export const searchPublicacionesAvanzada = async (req: Request, res: Response): 
       limit = 12 
     } = req.query;
 
-    const query: any = { publicado: true };
+    const query: any = { publicado: true, $and: [buildActivePublicationQuery()] };
 
     // Búsqueda por texto en título o contenido
     if (q && typeof q === 'string' && q.trim() !== '') {
-      query.$or = [
-        { titulo: { $regex: q.trim(), $options: 'i' } },
-        { contenido: { $regex: q.trim(), $options: 'i' } }
-      ];
+      query.$and.push({
+        $or: [
+          { titulo: { $regex: q.trim(), $options: 'i' } },
+          { contenido: { $regex: q.trim(), $options: 'i' } }
+        ]
+      });
     }
 
     // Filtros adicionales
@@ -639,6 +664,7 @@ export const searchByTitulo = async (req: Request, res: Response): Promise<void>
     const queryLimit = Math.min(Number(limit), 50);
 
     const query = {
+      ...buildActivePublicationQuery(),
       publicado: true,
       titulo: { $regex: searchTerm, $options: 'i' }
     };

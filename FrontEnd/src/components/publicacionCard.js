@@ -4,7 +4,8 @@ import PublicacionModal from "./publicacionModal";
 import { useAuth } from "./context/AuthContext";
 import CategoriaBadge from "./categoriaBadge";
 import ProfileErrorModal from "./ProfileErrorModal"; 
-import { API_URL, BASE_URL } from '../utils/api';
+import { API_URL } from '../utils/api';
+import { obtenerEtiquetaExpiracion } from "../utils/publicacionExpiracion";
 
 export const PublicacionCard = ({ publicacion }) => {
    // ========== FUNCIÓN FORMATFECHA CORREGIDA ==========
@@ -145,6 +146,7 @@ export const PublicacionCard = ({ publicacion }) => {
   const mostrarPrecio =
     (publicacion.tag === "evento" || publicacion.tag === "emprendimiento") &&
     Number.isFinite(precio);
+  const etiquetaExpiracion = obtenerEtiquetaExpiracion(publicacion);
 
   return (
     <>
@@ -272,6 +274,13 @@ export const PublicacionCard = ({ publicacion }) => {
               </div>      
                   </div>
               )}
+                          {etiquetaExpiracion && (
+              <div className="mb-3">
+                <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                  {etiquetaExpiracion}
+                </span>
+              </div>
+            )}
               </div>
           </div>
 
