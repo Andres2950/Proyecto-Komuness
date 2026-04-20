@@ -524,8 +524,8 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const publicacion = await modelPublicacion.findById(id);
-    if (!publicacion) {
+    const publicacionBase = await modelPublicacion.findById(id);
+    if (!publicacionBase) {
       res.status(404).json({ message: 'Publicación no encontrada' });
       return;
     }
@@ -561,17 +561,17 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
       else delete updatedData.horaEvento;
     }
 
-    const nextTag = (updatedData.tag as string | undefined) ?? publicacion.tag;
-    const nextPrecio = updatedData.hasOwnProperty('precio') ? updatedData.precio : publicacion.precio;
+    const nextTag = (updatedData.tag as string | undefined) ?? publicacionBase.tag;
+    const nextPrecio = updatedData.hasOwnProperty('precio') ? updatedData.precio : publicacionBase.precio;
     const nextPrecioEstudiante = updatedData.hasOwnProperty('precioEstudiante')
       ? updatedData.precioEstudiante
-      : publicacion.precioEstudiante;
+      : publicacionBase.precioEstudiante;
     const nextPrecioCiudadanoOro = updatedData.hasOwnProperty('precioCiudadanoOro')
       ? updatedData.precioCiudadanoOro
-      : publicacion.precioCiudadanoOro;
+      : publicacionBase.precioCiudadanoOro;
     const nextPrecioNegociable = updatedData.hasOwnProperty('precioNegociable')
       ? updatedData.precioNegociable === true
-      : publicacion.precioNegociable === true;
+      : publicacionBase.precioNegociable === true;
 
     const pricing = validateAndNormalizePricing(
       nextTag,
@@ -590,8 +590,8 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
         ...updatedData,
       }) ?? null;
 
-    const publicacion = await modelPublicacion.findByIdAndUpdate(id, updatedData, { new: true });
-    if (!publicacion) {
+    const publicacionActualizada = await modelPublicacion.findByIdAndUpdate(id, updatedData, { new: true });
+    if (!publicacionActualizada) {
       res.status(404).json({ message: 'Publicación no encontrada' });
       return;
     }
@@ -601,10 +601,10 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
     updatedData.precioEstudiante = pricing.precioEstudiante;
     updatedData.precioCiudadanoOro = pricing.precioCiudadanoOro;
 
-    Object.assign(publicacion, updatedData);
-    await publicacion.save();
+    Object.assign(publicacionActualizada, updatedData);
+    await publicacionActualizada.save();
 
-    res.status(200).json(publicacion);
+    res.status(200).json(publicacionActualizada);
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ message: err.message });
