@@ -17,6 +17,7 @@ import filesRouter from './routes/files.routes';
 import seccionAcercaRoutes from './routes/seccionAcerca.routes';
 import perfilRoutes from './routes/perfil.routes';
 import { startPublicationExpirationJob } from './services/publicacionExpiration.service';
+import tutorialRoutes from './routes/tutorial.routes'
 
 // Rutas de PayPal
 import paypalRoutes from './routes/paypal.routes';
@@ -81,6 +82,7 @@ app.use('/api/acerca-de', seccionAcercaRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/banco-profesionales', bancoProfesionalesRoutes);
 app.use('/api/paypal', paypalRoutes);
+app.use('/api/tutoriales', tutorialRoutes);
 
 /** Smoke test mínimo */
 app.get('/api/', (_req: Request, res: Response) => {
@@ -124,6 +126,15 @@ const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  if (err && typeof err.message === 'string' && err.message.includes('Tipo de archivo no permitido')) {
+    res.status(400).json({
+      success: false,
+      message: err.message,
+      errorCode: 'INVALID_FILE_TYPE'
+    });
+    return;
+  }
+
   if (err) {
     console.error('Unhandled error middleware:', err);
     res.status(500).json({ success: false, message: 'Error interno del servidor' });
@@ -151,5 +162,4 @@ if (require.main === module) {
     app.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
     });
-  });
 }

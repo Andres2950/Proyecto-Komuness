@@ -1,4 +1,5 @@
 "use strict";
+// src/controllers/publicacion.controller.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -12,10 +13,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEventosPorFecha = exports.filterPublicaciones = exports.addComentario = exports.deletePublicacion = exports.updatePublicacion = exports.getPublicacionesByCategoria = exports.getPublicacionById = exports.getPublicacionesByTag = exports.createPublicacionA = exports.createPublicacion = void 0;
+exports.searchByTitulo = exports.searchPublicacionesAvanzada = exports.searchPublicacionesByTitulo = exports.getEventosPorFecha = exports.filterPublicaciones = exports.addComentario = exports.deletePublicacion = exports.updatePublicacion = exports.getPublicacionesByCategoria = exports.getPublicacionById = exports.getPublicacionesByTag = exports.createPublicacionA = exports.createPublicacion = void 0;
 const publicacion_model_1 = require("../models/publicacion.model");
 const mongoose_1 = __importDefault(require("mongoose"));
 const gridfs_1 = require("../utils/gridfs");
+const mail_1 = require("../utils/mail"); // usa el mismo transporter que recuperación
+const usuario_model_1 = require("../models/usuario.model"); // ← Modelo de usuarios
 const LOG_ON = process.env.LOG_PUBLICACION === '1';
 // Utilidad: normaliza precio (string → number | undefined)
 function parsePrecio(input) {
@@ -27,50 +30,244 @@ function parsePrecio(input) {
         const trimmed = input.trim();
         if (!trimmed)
             return undefined;
-        // elimina símbolos comunes y separadores de miles
         const cleaned = trimmed.replace(/[₡$,]/g, '');
         const n = Number(cleaned);
         return Number.isFinite(n) ? n : undefined;
     }
     return undefined;
 }
-function mustRequirePrecio(tag) {
-    return tag === 'evento' || tag === 'emprendimiento';
+function parseBoolean(input) {
+    if (input === undefined || input === null || input === '')
+        return undefined;
+    if (typeof input === 'boolean')
+        return input;
+    if (typeof input === 'string') {
+        const normalized = input.trim().toLowerCase();
+        if (normalized === 'true' || normalized === '1')
+            return true;
+        if (normalized === 'false' || normalized === '0')
+            return false;
+    }
+    return undefined;
 }
-// NUEVO: normaliza hora del evento en formato HH:mm (24h). Si no cumple, se ignora.
+function parseMoneda(input) {
+    if (input === undefined || input === null)
+        return undefined;
+    if (typeof input !== 'string')
+        return undefined;
+    const normalized = input.trim().toUpperCase();
+    if (normalized === 'CRC' || normalized === 'USD')
+        return normalized;
+    return undefined;
+}
+function getMonedaData(inputMoneda, inputMonedaSimbolo) {
+    var _a;
+    const moneda = (_a = parseMoneda(inputMoneda)) !== null && _a !== void 0 ? _a : (inputMonedaSimbolo === '$' ? 'USD' : 'CRC');
+    return {
+        moneda,
+        monedaSimbolo: moneda === 'USD' ? '$' : '₡',
+    };
+}
+// función para validar teléfono
+function parseTelefono(input) {
+    if (typeof input !== 'string')
+        return undefined;
+    const trimmed = input.trim();
+    return trimmed || undefined;
+}
+// función para validar enlaces externos
+function parseEnlacesExternos(input) {
+    if (!input)
+        return undefined;
+    try {
+        if (typeof input === 'string') {
+            const parsed = JSON.parse(input);
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .filter((enlace) => enlace &&
+                    typeof enlace.nombre === 'string' &&
+                    typeof enlace.url === 'string' &&
+                    enlace.nombre.trim() !== '' &&
+                    enlace.url.trim() !== '')
+                    .map((enlace) => (Object.assign(Object.assign({}, enlace), { url: formatearUrlEnlace(enlace.url) })));
+            }
+        }
+        return undefined;
+    }
+    catch (_a) {
+        return undefined;
+    }
+}
+function formatearUrlEnlace(url) {
+    const urlLimpia = url.trim();
+    // Si es un correo sin mailto:
+    if (urlLimpia.includes('@') && !urlLimpia.startsWith('mailto:')) {
+        return `mailto:${urlLimpia}`;
+    }
+    // Si es un teléfono sin tel:
+    const soloNumeros = urlLimpia.replace(/[\s\-\+\(\)]/g, '');
+    if (/^\d+$/.test(soloNumeros) && !urlLimpia.startsWith('tel:')) {
+        return `tel:${urlLimpia}`;
+    }
+    return urlLimpia;
+}
+function mustRequirePrecio(tag) {
+    return tag === 'evento';
+}
+function validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro) {
+    if (tag === 'evento') {
+        if (precio === undefined) {
+            return {
+                error: 'El campo precio regular es obligatorio y debe ser numérico para eventos.',
+                precio,
+                precioNegociable: false,
+                precioEstudiante,
+                precioCiudadanoOro,
+            };
+        }
+        return {
+            precio,
+            precioNegociable: false,
+            precioEstudiante,
+            precioCiudadanoOro,
+        };
+    }
+    if (tag === 'emprendimiento') {
+        if (precioNegociable) {
+            return {
+                precio: undefined,
+                precioNegociable: true,
+                precioEstudiante: undefined,
+                precioCiudadanoOro: undefined,
+            };
+        }
+        if (precio === undefined) {
+            return {
+                error: 'Para emprendimientos debes indicar un precio regular o marcarlo como precio negociable.',
+                precio,
+                precioNegociable,
+                precioEstudiante,
+                precioCiudadanoOro,
+            };
+        }
+    }
+    return {
+        precio,
+        precioNegociable,
+        precioEstudiante,
+        precioCiudadanoOro,
+    };
+}
+// Normaliza hora del evento en formato HH:mm (24h). Si no cumple, se ignora.
 function parseHoraEvento(input) {
     if (typeof input !== 'string')
         return undefined;
     const t = input.trim();
-    // acepta "HH:mm"
     return /^\d{2}:\d{2}$/.test(t) ? t : undefined;
+}
+// función para validar ubicación
+function parseUbicacion(input) {
+    if (!input)
+        return undefined;
+    try {
+        let ubicacion;
+        // Si es string (JSON), parsear
+        if (typeof input === 'string') {
+            ubicacion = JSON.parse(input);
+        }
+        else {
+            ubicacion = input;
+        }
+        // Validar que tenga los campos necesarios
+        if (!ubicacion || typeof ubicacion !== 'object')
+            return undefined;
+        const lat = Number(ubicacion.latitude);
+        const lng = Number(ubicacion.longitude);
+        const dir = String(ubicacion.direccion).trim();
+        // Validar rango de coordenadas válidas
+        if (!Number.isFinite(lat) || lat < -90 || lat > 90)
+            return undefined;
+        if (!Number.isFinite(lng) || lng < -180 || lng > 180)
+            return undefined;
+        if (dir.length === 0 || dir.length > 500)
+            return undefined;
+        return {
+            latitude: lat,
+            longitude: lng,
+            direccion: dir,
+            mapLink: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`
+        };
+    }
+    catch (_a) {
+        return undefined;
+    }
+}
+// ───────────────────────────────────────────────────────────────────────────────
+// Helper: correos de admins (tipoUsuario = 1) con email válido
+// ───────────────────────────────────────────────────────────────────────────────
+function getAdminEmails() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const users = yield usuario_model_1.modelUsuario
+            .find({
+            tipoUsuario: 1, // 0=super-admin, 1=admin, 2=básico, 3=premium
+            email: { $exists: true, $ne: '' },
+        })
+            .select('email')
+            .lean();
+        const emails = users.map((u) => u.email).filter(Boolean);
+        return Array.from(new Set(emails)); // dedup
+    });
 }
 // Crear una publicación (sin adjuntos)
 const createPublicacion = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
     try {
         const body = req.body;
-        const precio = parsePrecio(body.precio);
-        const tag = body.tag;
-        const horaEvento = parseHoraEvento(body.horaEvento); // ← NUEVO
-        if (LOG_ON) {
-            console.log('[Publicaciones][createPublicacion] req.body.precio:', body.precio, '→ normalizado:', precio);
-            console.log('[Publicaciones][createPublicacion] req.body.horaEvento:', body.horaEvento, '→ normalizado:', horaEvento);
-            console.log('[Publicaciones][createPublicacion] tag:', tag);
-        }
-        if (mustRequirePrecio(tag) && (precio === undefined)) {
-            res.status(400).json({ message: 'El campo precio es obligatorio y debe ser numérico para eventos/emprendimientos.' });
+        // 🔴 Autor siempre desde el token
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+        if (!userId) {
+            res.status(401).json({ message: 'Usuario no autenticado' });
             return;
         }
-        const publicacion = Object.assign(Object.assign({}, body), { publicado: `${body.publicado}` === 'true', precio, // ← ya normalizado
-            horaEvento });
-        const nuevaPublicacion = new publicacion_model_1.modelPublicacion(publicacion);
-        if (LOG_ON) {
-            console.log('[Publicaciones][createPublicacion] doc a guardar (precio, horaEvento):', {
-                precio: nuevaPublicacion.precio,
-                horaEvento: nuevaPublicacion.horaEvento,
-            });
+        const precio = parsePrecio(body.precio);
+        const precioEstudiante = parsePrecio(body.precioEstudiante);
+        const precioCiudadanoOro = parsePrecio(body.precioCiudadanoOro);
+        const precioNegociable = parseBoolean(body.precioNegociable) === true;
+        const tag = body.tag;
+        const horaEvento = parseHoraEvento(body.horaEvento);
+        const telefono = parseTelefono(body.telefono);
+        const enlacesExternos = parseEnlacesExternos(body.enlacesExternos);
+        const ubicacion = parseUbicacion(body.ubicacion);
+        const monedaData = getMonedaData(body.moneda, body.monedaSimbolo);
+        const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
+        if (pricing.error) {
+            res.status(400).json({ message: pricing.error });
+            return;
         }
+        const publicacion = Object.assign(Object.assign({}, body), { autor: userId, publicado: `${body.publicado}` === 'true', precio: pricing.precio, moneda: monedaData.moneda, monedaSimbolo: monedaData.monedaSimbolo, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
+            telefono,
+            enlacesExternos,
+            ubicacion });
+        const nuevaPublicacion = new publicacion_model_1.modelPublicacion(publicacion);
         const savePost = yield nuevaPublicacion.save();
+        // Notificación por correo a admins (aprobación)
+        try {
+            const asunto = 'Nueva publicación para aprobar';
+            const texto = `Se ha creado una nueva publicación que requiere aprobación.\n` +
+                `Título: ${(_b = savePost.titulo) !== null && _b !== void 0 ? _b : '(sin título)'}\n` +
+                `Fecha: ${new Date((_c = savePost.createdAt) !== null && _c !== void 0 ? _c : Date.now()).toISOString()}`;
+            const emails = yield getAdminEmails();
+            if (emails.length === 0) {
+                if (LOG_ON)
+                    console.warn('[Publicaciones][createPublicacion] No hay admins con email para notificar');
+            }
+            else {
+                yield Promise.allSettled(emails.map((e) => (0, mail_1.sendEmail)(e, asunto, texto)));
+            }
+        }
+        catch (e) {
+            console.warn('[Publicaciones][createPublicacion] No se pudo enviar la notificación:', e);
+        }
         res.status(201).json(savePost);
     }
     catch (error) {
@@ -81,9 +278,15 @@ const createPublicacion = (req, res) => __awaiter(void 0, void 0, void 0, functi
 exports.createPublicacion = createPublicacion;
 // Crear publicación con adjuntos v2 (GridFS)
 const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     try {
         const publicacion = req.body;
+        // 🔴 Autor siempre desde el token
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+        if (!userId) {
+            res.status(401).json({ ok: false, message: 'Usuario no autenticado' });
+            return;
+        }
         // --- Recolectar archivos desde Multer (array o fields) ---
         let files = [];
         if (Array.isArray(req.files)) {
@@ -91,7 +294,7 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
         }
         else if (req.files && typeof req.files === 'object') {
             const map = req.files;
-            files = [...((_a = map['archivos']) !== null && _a !== void 0 ? _a : []), ...((_b = map['imagenes']) !== null && _b !== void 0 ? _b : [])];
+            files = [...((_b = map['archivos']) !== null && _b !== void 0 ? _b : []), ...((_c = map['imagenes']) !== null && _c !== void 0 ? _c : [])];
         }
         // --- Validar/establecer categoria ---
         let categoria = publicacion.categoria;
@@ -103,23 +306,25 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
             else {
                 res.status(400).json({
                     ok: false,
-                    message: 'categoria es requerida (envía "categoria" o configura DEFAULT_CATEGORIA_ID en .env)'
+                    message: 'categoria es requerida (envía "categoria" o configura DEFAULT_CATEGORIA_ID en .env)',
                 });
                 return;
             }
         }
-        // --- Precio (existente) ---
+        // --- Precio / otros campos ---
         const precio = parsePrecio(publicacion.precio);
+        const precioEstudiante = parsePrecio(publicacion.precioEstudiante);
+        const precioCiudadanoOro = parsePrecio(publicacion.precioCiudadanoOro);
+        const precioNegociable = parseBoolean(publicacion.precioNegociable) === true;
         const tag = publicacion.tag;
-        // --- Hora del evento (NUEVO) ---
         const horaEvento = parseHoraEvento(publicacion.horaEvento);
-        if (LOG_ON) {
-            console.log('[Publicaciones][createPublicacionA] body.precio:', publicacion.precio, '→', precio);
-            console.log('[Publicaciones][createPublicacionA] body.horaEvento:', publicacion.horaEvento, '→', horaEvento);
-            console.log('[Publicaciones][createPublicacionA] tag:', tag);
-        }
-        if (mustRequirePrecio(tag) && (precio === undefined)) {
-            res.status(400).json({ ok: false, message: 'El campo precio es obligatorio y debe ser numérico para eventos/emprendimientos.' });
+        const telefono = parseTelefono(publicacion.telefono);
+        const enlacesExternos = parseEnlacesExternos(publicacion.enlacesExternos);
+        const ubicacion = parseUbicacion(publicacion.ubicacion);
+        const monedaData = getMonedaData(publicacion.moneda, publicacion.monedaSimbolo);
+        const pricing = validateAndNormalizePricing(tag, precio, precioNegociable, precioEstudiante, precioCiudadanoOro);
+        if (pricing.error) {
+            res.status(400).json({ ok: false, message: pricing.error });
             return;
         }
         // --- Subir adjuntos (0..N) ---
@@ -132,17 +337,30 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         // --- Crear documento y guardar ---
-        const nuevaPublicacion = new publicacion_model_1.modelPublicacion(Object.assign(Object.assign({}, publicacion), { categoria, adjunto: adjuntos, 
-            // normalizaciones útiles:
-            publicado: `${publicacion.publicado}` === 'true', precio, // ← ya normalizado
-            horaEvento }));
-        if (LOG_ON) {
-            console.log('[Publicaciones][createPublicacionA] doc a guardar (precio, horaEvento):', {
-                precio: nuevaPublicacion.precio,
-                horaEvento: nuevaPublicacion.horaEvento,
-            });
-        }
+        const nuevaPublicacion = new publicacion_model_1.modelPublicacion(Object.assign(Object.assign({}, publicacion), { autor: userId, // 🔴 forzamos autor desde el token
+            categoria, adjunto: adjuntos, publicado: `${publicacion.publicado}` === 'true', precio: pricing.precio, moneda: monedaData.moneda, monedaSimbolo: monedaData.monedaSimbolo, precioNegociable: pricing.precioNegociable, precioEstudiante: pricing.precioEstudiante, precioCiudadanoOro: pricing.precioCiudadanoOro, horaEvento,
+            telefono,
+            enlacesExternos,
+            ubicacion }));
         const savePost = yield nuevaPublicacion.save();
+        // Notificación por correo a admins (aprobación)
+        try {
+            const asunto = 'Nueva publicación para aprobar';
+            const texto = `Se ha creado una nueva publicación que requiere aprobación.\n` +
+                `Título: ${(_d = savePost.titulo) !== null && _d !== void 0 ? _d : '(sin título)'}\n` +
+                `Fecha: ${new Date((_e = savePost.createdAt) !== null && _e !== void 0 ? _e : Date.now()).toISOString()}`;
+            const emails = yield getAdminEmails();
+            if (emails.length === 0) {
+                if (LOG_ON)
+                    console.warn('[Publicaciones][createPublicacionA] No hay admins con email para notificar');
+            }
+            else {
+                yield Promise.allSettled(emails.map((e) => (0, mail_1.sendEmail)(e, asunto, texto)));
+            }
+        }
+        catch (e) {
+            console.warn('[Publicaciones][createPublicacionA] No se pudo enviar la notificación:', e);
+        }
         res.status(201).json(savePost);
     }
     catch (error) {
@@ -162,12 +380,12 @@ const getPublicacionesByTag = (req, res) => __awaiter(void 0, void 0, void 0, fu
         if (tag)
             query.tag = tag;
         if (publicado !== undefined)
-            query.publicado = (publicado === 'true');
-        if (categoria) {
+            query.publicado = publicado === 'true';
+        if (categoria)
             query.categoria = categoria;
-        }
         const [publicaciones, totalPublicaciones] = yield Promise.all([
-            publicacion_model_1.modelPublicacion.find(query)
+            publicacion_model_1.modelPublicacion
+                .find(query)
                 .populate('autor', 'nombre')
                 .populate('categoria', 'nombre estado')
                 .sort({ createdAt: -1 })
@@ -195,7 +413,8 @@ exports.getPublicacionesByTag = getPublicacionesByTag;
 const getPublicacionById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const publicacion = yield publicacion_model_1.modelPublicacion.findById(id)
+        const publicacion = yield publicacion_model_1.modelPublicacion
+            .findById(id)
             .populate('autor', 'nombre')
             .populate('categoria', 'nombre estado');
         if (!publicacion) {
@@ -218,12 +437,13 @@ const getPublicacionesByCategoria = (req, res) => __awaiter(void 0, void 0, void
         const limit = parseInt(req.query.limit) || 10;
         const query = { categoria: categoriaId, publicado: true };
         const [publicaciones, total] = yield Promise.all([
-            publicacion_model_1.modelPublicacion.find(query)
+            publicacion_model_1.modelPublicacion
+                .find(query)
                 .populate('autor', 'nombre')
                 .populate('categoria', 'nombre estado')
                 .skip(offset)
                 .limit(limit),
-            publicacion_model_1.modelPublicacion.countDocuments(query)
+            publicacion_model_1.modelPublicacion.countDocuments(query),
         ]);
         res.status(200).json({
             data: publicaciones,
@@ -243,39 +463,63 @@ const getPublicacionesByCategoria = (req, res) => __awaiter(void 0, void 0, void
 exports.getPublicacionesByCategoria = getPublicacionesByCategoria;
 // Actualizar una publicación
 const updatePublicacion = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { id } = req.params;
         const updatedData = Object.assign({}, req.body);
-        if (updatedData.hasOwnProperty('precio')) {
-            const parsed = parsePrecio(updatedData.precio);
-            if (LOG_ON) {
-                console.log('[Publicaciones][updatePublicacion] body.precio:', updatedData.precio, '→ normalizado:', parsed);
-            }
-            updatedData.precio = parsed;
-        }
-        // NUEVO: si viene horaEvento, normalizar a HH:mm (si no es válida, se quita del update para no pisar nada)
-        if (updatedData.hasOwnProperty('horaEvento')) {
-            const parsedHora = parseHoraEvento(updatedData.horaEvento);
-            if (LOG_ON) {
-                console.log('[Publicaciones][updatePublicacion] body.horaEvento:', updatedData.horaEvento, '→ normalizado:', parsedHora);
-            }
-            if (parsedHora !== undefined) {
-                updatedData.horaEvento = parsedHora;
-            }
-            else {
-                delete updatedData.horaEvento;
-            }
-        }
-        // Si cambia tag a evento/emprendimiento y no trae precio válido:
-        if (mustRequirePrecio(updatedData.tag) && (updatedData.precio === undefined)) {
-            res.status(400).json({ message: 'El campo precio es obligatorio y debe ser numérico para eventos/emprendimientos.' });
-            return;
-        }
-        const publicacion = yield publicacion_model_1.modelPublicacion.findByIdAndUpdate(id, updatedData, { new: true });
+        const publicacion = yield publicacion_model_1.modelPublicacion.findById(id);
         if (!publicacion) {
             res.status(404).json({ message: 'Publicación no encontrada' });
             return;
         }
+        if (updatedData.hasOwnProperty('precio')) {
+            const parsed = parsePrecio(updatedData.precio);
+            updatedData.precio = parsed;
+        }
+        if (updatedData.hasOwnProperty('precioEstudiante')) {
+            updatedData.precioEstudiante = parsePrecio(updatedData.precioEstudiante);
+        }
+        if (updatedData.hasOwnProperty('precioCiudadanoOro')) {
+            updatedData.precioCiudadanoOro = parsePrecio(updatedData.precioCiudadanoOro);
+        }
+        if (updatedData.hasOwnProperty('precioNegociable')) {
+            updatedData.precioNegociable = parseBoolean(updatedData.precioNegociable) === true;
+        }
+        if (updatedData.hasOwnProperty('moneda') || updatedData.hasOwnProperty('monedaSimbolo')) {
+            const monedaData = getMonedaData(updatedData.moneda, updatedData.monedaSimbolo);
+            updatedData.moneda = monedaData.moneda;
+            updatedData.monedaSimbolo = monedaData.monedaSimbolo;
+        }
+        // Si viene horaEvento, normalizar a HH:mm (si no es válida, no pisa)
+        if (updatedData.hasOwnProperty('horaEvento')) {
+            const parsedHora = parseHoraEvento(updatedData.horaEvento);
+            if (parsedHora !== undefined)
+                updatedData.horaEvento = parsedHora;
+            else
+                delete updatedData.horaEvento;
+        }
+        const nextTag = (_a = updatedData.tag) !== null && _a !== void 0 ? _a : publicacion.tag;
+        const nextPrecio = updatedData.hasOwnProperty('precio') ? updatedData.precio : publicacion.precio;
+        const nextPrecioEstudiante = updatedData.hasOwnProperty('precioEstudiante')
+            ? updatedData.precioEstudiante
+            : publicacion.precioEstudiante;
+        const nextPrecioCiudadanoOro = updatedData.hasOwnProperty('precioCiudadanoOro')
+            ? updatedData.precioCiudadanoOro
+            : publicacion.precioCiudadanoOro;
+        const nextPrecioNegociable = updatedData.hasOwnProperty('precioNegociable')
+            ? updatedData.precioNegociable === true
+            : publicacion.precioNegociable === true;
+        const pricing = validateAndNormalizePricing(nextTag, nextPrecio, nextPrecioNegociable, nextPrecioEstudiante, nextPrecioCiudadanoOro);
+        if (pricing.error) {
+            res.status(400).json({ message: pricing.error });
+            return;
+        }
+        updatedData.precio = pricing.precio;
+        updatedData.precioNegociable = pricing.precioNegociable;
+        updatedData.precioEstudiante = pricing.precioEstudiante;
+        updatedData.precioCiudadanoOro = pricing.precioCiudadanoOro;
+        Object.assign(publicacion, updatedData);
+        yield publicacion.save();
         res.status(200).json(publicacion);
     }
     catch (error) {
@@ -377,18 +621,18 @@ const getEventosPorFecha = (req, res) => __awaiter(void 0, void 0, void 0, funct
             res.status(400).json({ message: 'Se requieren startDate y endDate' });
             return;
         }
-        const eventos = yield publicacion_model_1.modelPublicacion.find({
+        const eventos = yield publicacion_model_1.modelPublicacion
+            .find({
             tag: 'evento',
             publicado: true,
             fechaEvento: {
                 $gte: startDate,
-                $lte: endDate
-            }
+                $lte: endDate,
+            },
         })
             .populate('autor', 'nombre')
             .populate('categoria', 'nombre')
-            // incluye horaEvento y precio
-            .select('titulo fechaEvento horaEvento contenido adjunto _id precio')
+            .select('titulo fechaEvento horaEvento contenido adjunto _id precio moneda monedaSimbolo')
             .sort({ fechaEvento: 1 });
         res.status(200).json(eventos);
     }
@@ -398,3 +642,124 @@ const getEventosPorFecha = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.getEventosPorFecha = getEventosPorFecha;
+// Búsqueda rápida por título (para sugerencias)
+const searchPublicacionesByTitulo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { q, limit = 5 } = req.query;
+        if (!q || typeof q !== 'string' || q.trim() === '') {
+            res.status(400).json({ message: 'El parámetro de búsqueda (q) es requerido' });
+            return;
+        }
+        const searchTerm = q.trim();
+        const searchLimit = Math.min(Number(limit), 50); // Máximo 50 resultados
+        const publicaciones = yield publicacion_model_1.modelPublicacion
+            .find({
+            publicado: true,
+            titulo: { $regex: searchTerm, $options: 'i' }
+        })
+            .populate('autor', 'nombre')
+            .populate('categoria', 'nombre estado')
+            .select('titulo tag autor categoria fecha fechaEvento precio moneda monedaSimbolo adjunto')
+            .limit(searchLimit)
+            .sort({ createdAt: -1 });
+        res.status(200).json({
+            data: publicaciones,
+            searchTerm,
+            total: publicaciones.length
+        });
+    }
+    catch (error) {
+        const err = error;
+        console.error('Error en búsqueda rápida:', err);
+        res.status(500).json({ message: 'Error al realizar la búsqueda' });
+    }
+});
+exports.searchPublicacionesByTitulo = searchPublicacionesByTitulo;
+// Búsqueda avanzada con filtros
+const searchPublicacionesAvanzada = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { q, tag, categoria, offset = 0, limit = 12 } = req.query;
+        const query = { publicado: true };
+        // Búsqueda por texto en título o contenido
+        if (q && typeof q === 'string' && q.trim() !== '') {
+            query.$or = [
+                { titulo: { $regex: q.trim(), $options: 'i' } },
+                { contenido: { $regex: q.trim(), $options: 'i' } }
+            ];
+        }
+        // Filtros adicionales
+        if (tag)
+            query.tag = tag;
+        if (categoria)
+            query.categoria = categoria;
+        const [publicaciones, totalPublicaciones] = yield Promise.all([
+            publicacion_model_1.modelPublicacion
+                .find(query)
+                .populate('autor', 'nombre')
+                .populate('categoria', 'nombre estado')
+                .sort({ createdAt: -1 })
+                .skip(Number(offset))
+                .limit(Number(limit)),
+            publicacion_model_1.modelPublicacion.countDocuments(query)
+        ]);
+        res.status(200).json({
+            data: publicaciones,
+            pagination: {
+                offset: Number(offset),
+                limit: Number(limit),
+                total: totalPublicaciones,
+                pages: Math.ceil(totalPublicaciones / Math.max(Number(limit), 1)),
+            },
+            searchTerm: q
+        });
+    }
+    catch (error) {
+        const err = error;
+        console.error('Error en búsqueda avanzada:', err);
+        res.status(500).json({ message: 'Error al realizar la búsqueda' });
+    }
+});
+exports.searchPublicacionesAvanzada = searchPublicacionesAvanzada;
+// Búsqueda específica por título
+const searchByTitulo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { q, offset = 0, limit = 12 } = req.query;
+        if (!q || typeof q !== 'string' || q.trim() === '') {
+            res.status(400).json({ message: 'El parámetro de búsqueda (q) es requerido' });
+            return;
+        }
+        const searchTerm = q.trim();
+        const queryOffset = Number(offset);
+        const queryLimit = Math.min(Number(limit), 50);
+        const query = {
+            publicado: true,
+            titulo: { $regex: searchTerm, $options: 'i' }
+        };
+        const [publicaciones, total] = yield Promise.all([
+            publicacion_model_1.modelPublicacion
+                .find(query)
+                .populate('autor', 'nombre')
+                .populate('categoria', 'nombre estado')
+                .sort({ createdAt: -1 })
+                .skip(queryOffset)
+                .limit(queryLimit),
+            publicacion_model_1.modelPublicacion.countDocuments(query)
+        ]);
+        res.status(200).json({
+            data: publicaciones,
+            pagination: {
+                offset: queryOffset,
+                limit: queryLimit,
+                total,
+                pages: Math.ceil(total / Math.max(queryLimit, 1)),
+            },
+            searchTerm
+        });
+    }
+    catch (error) {
+        const err = error;
+        console.error('Error en búsqueda por título:', err);
+        res.status(500).json({ message: 'Error al realizar la búsqueda' });
+    }
+});
+exports.searchByTitulo = searchByTitulo;

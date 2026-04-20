@@ -5,8 +5,7 @@ import {PerfilUsuario} from './perfilUsuario'
 import {PublicacionDetalle} from './publicacionDetalle'
 import {Navbar} from './navbar'
 import {Biblioteca} from './biblioteca'
-    
-import FormularioPublicacion from "../pages/formulario";
+
 import {IniciarSesion} from './iniciarSesion'
 import {RecuperarContra} from './recuperarContra'
 import {NuevaContra} from './nuevaContra'
@@ -19,6 +18,8 @@ import CheckoutPremium from './CheckoutPremium';
 import PerfilPublico from './PerfilPublico';
 import EditarPerfil from './EditarPerfil';
 import BancoProfesionales from './BancoProfesionales';
+import TerminosCondiciones from './TerminosCondiciones'; // NUEVO
+import Tutoriales from "./tutoriales"; // NUEVO
 
 export const Rutas = () =>{
     
@@ -44,8 +45,8 @@ export const Rutas = () =>{
                 <Route path="/perfil/:id" element={<PerfilPublico />} />
                 <Route path="/mi-perfil/editar" element={<EditarPerfil />} />
                 <Route path="/profesionales" element={<BancoProfesionales />} />
-
-
+                <Route path="/terminos-y-condiciones" element={<TerminosCondiciones />} /> {/* NUEVO */}
+                <Route path="/tutoriales" element={<Tutoriales />} /> {/* NUEVO */}
 
                 <Route path="*" element={<Navigate to="/publicaciones" />} />
             </Routes>
