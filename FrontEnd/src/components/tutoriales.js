@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from "../components/context/AuthContext"
+import { useAuth } from "../components/context/AuthContext";
 import { toast } from 'react-hot-toast';
-import { API_URL } from '../utils/api'
-import TutorialModal from '../components/tutorialModal'
+import { API_URL } from '../utils/api';
+import TutorialModal from '../components/tutorialModal';
+import ReactMarkdown from "react-markdown";
 
 export const Tutoriales = () => {
     const { user } = useAuth()
@@ -163,13 +164,11 @@ export const Tutoriales = () => {
           {/* Descripción */}
           {tutorial.descripcion && (
             <div className="mt-5">
-            <h3 className="text-3xl text-white font-semibold flex gap-2">
-                Descripción del tutorial:
-            </h3>
-
-            <p className="text-white text-xl mt-2">
-              {tutorial.descripcion}
-            </p>
+                <div className="prose prose-invert max-w-none mt-2">
+                <ReactMarkdown>
+                    {tutorial.descripcion}
+                </ReactMarkdown>
+                </div>
             </div>
           )}
  
