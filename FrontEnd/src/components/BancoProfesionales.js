@@ -78,12 +78,14 @@ const BancoProfesionales = () => {
     }
 
     //Verificar si puede unirse según el perfil público
-    const returnData = await cargarDatosUsuario();
+    if (estadoUsuario?.enBancoProfesionales){
+      const returnData = await cargarDatosUsuario();
 
-    if(returnData === false){
-      return;
+      if(returnData === false){
+        return;
+      }
     }
-    
+
     try {
       setCargandoToggle(true);
       const response = await fetch(`${PROFESIONALES_API_URL}/banco-profesionales/toggle`, { 
@@ -180,7 +182,6 @@ const quitarDelBanco = async (perfilId) => {
 
   //Imprime lo que hace falta
   const ImprimirErroresDePerfil = async (data) => {
-
     toast(
       <div>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>

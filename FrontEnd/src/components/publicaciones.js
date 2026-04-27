@@ -42,6 +42,19 @@ export const Publicaciones = ({ tag: propTag }) => {
   const [limiteData, setLimiteData] = useState(null);
   const [selectedPub, setSelectedPub] = useState(null);
 
+  //Estado del banco de profesionales
+  const [estadoUsuario, setEstadoUsuario] = useState(null);
+  const [cargandoEstado, setCargandoEstado] = useState(false);
+
+  //Variables de Usuario
+  const UserType = {
+    SUPERADMIN: 0,
+    ADMIN: 1,
+    BASIC: 2,
+  };
+
+  const esAdmin = [UserType.SUPERADMIN, UserType.ADMIN].includes(Number(user?.tipoUsuario));
+
   useEffect(() => {
     const path = location.pathname;
     let newTag = propTag;
@@ -160,12 +173,6 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      cargarDatosLimite();
-    }
-  }, [user]);
-
   // Función para cargar datos del límite de publicaciones del usuario
   const cargarDatosLimite = async () => {
 
@@ -206,27 +213,61 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
     }
   };
 
+  useEffect(() => {
+    // Verificar si el usuario está en el banco 
+    const cargarEstadoUsuario = async () => {
+      if (!user) return;
+      
+      try {
+        setCargandoEstado(true);
+        const response = await fetch(`${API_URL}/banco-profesionales/estado`, { 
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setEstadoUsuario(data.data);
+          console.log(data.data)
+        }
+       
+      } catch (error) {
+        console.error('Error al cargar estado:', error);
+      } finally {
+        setCargandoEstado(false);
+      }
+    };
+    
+    cargarEstadoUsuario();
+
+    //Datos límite
+    if (user) {
+      cargarDatosLimite();
+    }
+  }, [user]);
+
   return (
     <div className="bg-gray-800/80 min-h-screen">
       <div className="relative">
         {/* Contenedor para filtros y buscador */}
         <div className="bg-blue-900">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-2 p-4">
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
             {/* Buscador */}
             <BuscadorPublicaciones />
 
-            {limiteData && (tag === 'publicacion') && Number(user?.tipoUsuario) === 2 &&(
-            <div className="flex-1 flex justify-center p-4">
-              <div className="w-full max-w-md">
-                <LimitePublicaciones limiteData={limiteData} />
-              </div>
-            </div>
-          )}
-
             {/* Filtro de categorías */}
-            <div className="md:ml-auto">
-              <CategoriaFilter />
+            <CategoriaFilter />
             </div>
+
+            {limiteData && (tag === 'publicacion') && !esAdmin && (
+              <div className="basis-full md:basis-auto w-full md:w-auto flex justify-center md:justify-end">
+                <div className="w-full max-w-md">
+                  <LimitePublicaciones limiteData={limiteData} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -301,12 +342,14 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
         )}
       </div>
 
+       {(esAdmin || estadoUsuario?.enBancoProfesionales) && (
       <button
         onClick={handleCrearPublicacion}
         className="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-yellow-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-lg hover:bg-yellow-700 transition-all duration-300 z-50 flex items-center justify-center text-2xl"
       >
         +
       </button>
+      )}
 
       <AlertaLimitePublicaciones
         show={showLimitAlert}
