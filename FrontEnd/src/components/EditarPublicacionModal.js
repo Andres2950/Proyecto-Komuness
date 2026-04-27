@@ -4,6 +4,7 @@ import { API_URL } from "../utils/api";
 import { toast } from "react-hot-toast";
 import CategoriaSelector from '../components/categoriaSelector';
 import '../CSS/formularioPublicacion.css';
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -24,6 +25,8 @@ export const EditarPublicacionModal = ({ publicacion, isOpen, onClose, onUpdate 
   const [imagenesMantenidas, setImagenesMantenidas] = useState([]);
   const [nuevasImagenes, setNuevasImagenes] = useState([]);
   const [cargando, setCargando] = useState(false);
+
+  useLockBodyScroll(isOpen);
 
   // Verificar si se alcanzó el límite de ediciones
   const haAlcanzadoLimite = (publicacion.editCount || 0) >= 3;

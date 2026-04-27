@@ -211,22 +211,22 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
       <div className="relative">
         {/* Contenedor para filtros y buscador */}
         <div className="bg-blue-900">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-2 p-4">
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
             {/* Buscador */}
             <BuscadorPublicaciones />
 
-            {limiteData && (tag === 'publicacion') && Number(user?.tipoUsuario) === 2 &&(
-            <div className="flex-1 flex justify-center p-4">
-              <div className="w-full max-w-md">
-                <LimitePublicaciones limiteData={limiteData} />
-              </div>
-            </div>
-          )}
-
             {/* Filtro de categorías */}
-            <div className="md:ml-auto">
-              <CategoriaFilter />
+            <CategoriaFilter />
             </div>
+
+            {limiteData && (tag === 'publicacion') && Number(user?.tipoUsuario) === 2 && (
+              <div className="basis-full md:basis-auto w-full md:w-auto flex justify-center md:justify-end">
+                <div className="w-full max-w-md">
+                  <LimitePublicaciones limiteData={limiteData} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

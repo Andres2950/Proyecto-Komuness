@@ -180,8 +180,6 @@ const quitarDelBanco = async (perfilId) => {
 
   //Imprime lo que hace falta
   const ImprimirErroresDePerfil = async (data) => {
-    const faltantes = data?.data;
-
     toast(
       <div>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>
@@ -189,7 +187,7 @@ const quitarDelBanco = async (perfilId) => {
         </div>
 
         <ul style={{paddingLeft: 18, listStyleType: 'disc' }}>
-          {faltantes.map((item) => (
+          {data?.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
