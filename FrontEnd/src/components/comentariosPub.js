@@ -62,7 +62,7 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
       fecha: new Date().toLocaleDateString("es-ES"),
     };
 
-    setComentarios([comentario, ...comentarios]);
+    //setComentarios([comentario, ...comentarios]);
     setNuevoComentario("");
     enviarComentario(comentario);
   };
@@ -84,6 +84,11 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
       if (!res.ok) {
         console.error("Error al agregar comentario");
       }
+
+      const data = await res.json();
+
+      setComentarios(data);
+
     } catch (err) {
       console.error("Error en la solicitud:", err);
     }
@@ -98,16 +103,17 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
   const textareaRef = useRef(null);
 
   const [replyTo, setReplyTo] = useState(null);
-  const [respuesta, setRespuesta] = useState(null);
+  const [comentarioActivo, setComentarioActivo] = useState(null);
+  const [respuesta, setRespuesta] = useState("");
 
 
   const agregarRespuesta = () => {
     if (!respuesta.trim()) return;
 
     const nuevaRespuesta = {
-      contenido: nuevaRespuesta,
+      contenido: respuesta,
       replyTo: {
-        id: replyTo._id,
+        _id: replyTo._id,
         nombre: replyTo.autor.nombre,
         apellido: replyTo.autor.apellido,
       }
@@ -122,7 +128,7 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
   const enviarRespuesta = async (respuesta) => {
     try {
       const res = await fetch(
-        `${API_URL}/publicaciones/${publicacionId}/comentarios/respuesta`,
+        `${API_URL}/publicaciones/${publicacionId}/comentarios/${comentarioActivo}/respuesta`,
         {
           method: "POST",
           headers: {
@@ -135,6 +141,13 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
       if (!res.ok){
         console.error("Error al agregar respuesta");
       }
+
+      const data = await res.json();
+
+      setComentarios(data);
+      setRespuesta("");
+      setReplyTo(null);
+
     } catch (err) {
       console.error("Error en la solicitud:", err);
     }
@@ -209,7 +222,7 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
                 </div>
                 <button 
                   className="ml-auto px-2 py-1 bg-gray-800 hover:bg-zinc-900 hover:text-gray-100 rounded-lg text-gray-400"
-                  onClick={() => setReplyTo(comentario)}
+                  onClick={() => {setReplyTo(comentario); setComentarioActivo(comentario._id)}}
                 >
                   Responder
                 </button>
@@ -222,7 +235,7 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
                 <ComentarioInput
                   value={respuesta}
                   onChange={setRespuesta}
-                  onSubmit={enviarRespuesta}
+                  onSubmit={agregarRespuesta}
                 />
 
               </div>
@@ -230,22 +243,44 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
               
               {/* Respuestas */}
               {comentario?.respuestas?.length > 0 && (
-                comentario.respuestas.map((respuesta) => (
+                comentario.respuestas.map((respuestaObj) => (
+                  <div>
                   <div
-                    key={respuesta?._id}
+                    key={respuestaObj?._id}
                     className="flex items-start space-x-2 ml-8 bg-gray-600 p-3 rounded-lg"
                   >
                     <div className="w-full">
                       <p className="text-sm text-gray-300 font-semibold">
-                        {respuesta.autor.nombre}{" "}
+                        {respuestaObj.autor.nombre}{" "}
                         <span className="text-xs text-gray-400">
-                        • {respuesta.fecha}
+                        • {respuestaObj.fecha}
                         </span>
                       </p>
                       <p className="text-white break-words">
-                        @{respuesta.replyTo.nombre} {respuesta.contenido}
+                        @{respuestaObj.replyTo.nombre} {respuestaObj.contenido}
                       </p>
                   </div>
+                  <button 
+                    className="ml-auto px-2 py-1 bg-gray-800 hover:bg-zinc-900 hover:text-gray-100 rounded-lg text-gray-400"
+                    onClick={() => {setReplyTo(respuestaObj); setComentarioActivo(comentario._id)}}
+                  >
+                    Responder
+                  </button>
+
+                </div>
+                {/*Input para responder*/}
+              {replyTo && (replyTo._id === respuestaObj._id) && (
+              <div className="flex">
+                
+                <ComentarioInput
+                  value={respuesta}
+                  onChange={setRespuesta}
+                  onSubmit={agregarRespuesta}
+                />
+
+              </div>
+              )}
+
                 </div>
               ))
             )}

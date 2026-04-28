@@ -14,7 +14,6 @@ const comentarioSchema = new Schema({
   fecha: String,
   respuestas: [
     {
-      _id: String,
       autor: {
         _id: String,
         nombre: String,
