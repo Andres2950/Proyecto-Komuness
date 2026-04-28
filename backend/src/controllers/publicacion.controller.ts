@@ -624,9 +624,28 @@ export const deletePublicacion = async (req: Request, res: Response): Promise<vo
 // Agregar comentario
 export const addComentario = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { autor, contenido, fecha } = req.body;
+  //const { autor, contenido, fecha } = req.body;
+  //const { id } = req.params;
+  const { contenido } = req.body;
+  
+  const user = req.user;
 
-  const nuevoComentario: IComentario = { autor, contenido, fecha };
+  if (!user) {
+    res.status(401).json({ message: "No autorizado" });
+    return;
+  }
+  const nuevoComentario = {
+    autor: {
+      id: user._id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      avatar: user.avatar
+    },
+    contenido,
+    fecha: new Date().toISOString()
+  };
+
+  //const nuevoComentario: IComentario = { autor, contenido, fecha };
 
   try {
     const publicacionActualizada = await modelPublicacion.findByIdAndUpdate(
