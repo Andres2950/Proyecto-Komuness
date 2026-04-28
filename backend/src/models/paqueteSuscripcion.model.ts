@@ -3,15 +3,7 @@ import { IPaqueteSuscripcion } from "@/interfaces/paqueteSuscripcion.interface";
 
 const paqueteSuscripcionSchema = new Schema<IPaqueteSuscripcion>(
   {
-    codigo: {
-      type: String,
-      enum: ["mensual", "anual"],
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    nombre: { type: String, required: true, trim: true },
+    nombre: { type: String, required: true, trim: true, unique: true },
     descripcion: { type: String, default: "" },
 
     monto: { type: Number, required: true, min: 0 },

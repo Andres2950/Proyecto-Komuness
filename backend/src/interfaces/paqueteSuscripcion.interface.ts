@@ -1,10 +1,8 @@
 import { Document } from "mongoose";
 
-export type PlanSuscripcion = "mensual" | "anual";
 export type Moneda = "USD" | "CRC";
 
 export interface IPaqueteSuscripcion extends Document {
-  codigo: PlanSuscripcion;      // clave interna: "mensual" | "anual"
   nombre: string;               // "Plan Mensual", "Plan Anual", etc.
   descripcion?: string;
 
