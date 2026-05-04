@@ -691,7 +691,7 @@ export const Biblioteca = () => {
 
           {fileRejections.length > 0 && (
             <div className="mt-4 text-red-600">
-              Algunos archivos no se pudieron subir por exceder el tamaño máximo permitido de 200 MB.
+              Algunos archivos no se pudieron subir por exceder el tamaño máximo permitido de 80 MB.
             </div>
           )}
 
