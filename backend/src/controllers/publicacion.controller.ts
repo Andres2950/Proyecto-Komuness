@@ -595,7 +595,7 @@ export const updatePublicacion = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    res.status(200).json(publicacionActualizada);
+    res.status(200).json(publicacion);
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ message: err.message });
