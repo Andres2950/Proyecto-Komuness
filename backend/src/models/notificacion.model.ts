@@ -6,7 +6,7 @@ const notificacionSchema = new Schema<INotificacion>(
     nombre: { type: String, required: true, trim: true },
     descripcion: { type: String, required: true, trim: true },
     fechaCaducidad: { type: Date, required: false, default: null },
-    vistoPor: [{ type: Schema.Types.ObjectId, ref: "Usuario", default: [] }],
+    vistoPor: [{ type: Schema.Types.ObjectId, ref: "Usuario", default: []}],
   },
   {
     timestamps: true,
