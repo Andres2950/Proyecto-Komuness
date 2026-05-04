@@ -19,6 +19,7 @@ const files_routes_1 = __importDefault(require("./routes/files.routes"));
 const seccionAcerca_routes_1 = __importDefault(require("./routes/seccionAcerca.routes"));
 const perfil_routes_1 = __importDefault(require("./routes/perfil.routes"));
 const tutorial_routes_1 = __importDefault(require("./routes/tutorial.routes"));
+const paqueteSuscripcion_routes_1 = __importDefault(require("./routes/paqueteSuscripcion.routes"));
 // Rutas de PayPal
 const paypal_routes_1 = __importDefault(require("./routes/paypal.routes"));
 const bancoProfesionales_routes_1 = __importDefault(require("./routes/bancoProfesionales.routes"));
@@ -72,6 +73,7 @@ app.use('/api/perfil', perfil_routes_1.default);
 app.use('/api/banco-profesionales', bancoProfesionales_routes_1.default);
 app.use('/api/paypal', paypal_routes_1.default);
 app.use('/api/tutoriales', tutorial_routes_1.default);
+app.use('/api/paquetes-suscripcion', paqueteSuscripcion_routes_1.default);
 /** Smoke test mínimo */
 app.get('/api/', (_req, res) => {
     res.send('Hello World');
