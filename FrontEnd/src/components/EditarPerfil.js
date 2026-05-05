@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL, BASE_URL } from '../utils/api';
 import { toast } from 'react-hot-toast';
@@ -76,11 +76,21 @@ const EditarPerfil = () => {
       }
 
       const data = await response.json();
-      setPerfil({
-        ...perfil,
+      const draft = readDraft();
+
+      setPerfil(prev => ({
+        ...prev,
         ...data.data,
-        redesSociales: data.data.redesSociales || perfil.redesSociales
-      });
+        redesSociales: { ...prev.redesSociales, ...(data.data?.redesSociales || {}) },
+      }));
+
+      if (draft) {
+        setPerfil(prev => ({
+          ...prev,
+          ...draft,
+          redesSociales: { ...prev.redesSociales, ...(draft.redesSociales || {}) },
+        }));
+      }
     } catch (error) {
       toast.error('Error al cargar el perfil');
       console.error(error);
@@ -220,11 +230,112 @@ const EditarPerfil = () => {
     try {
       setGuardando(true);
 
-      // Validaciones básicas
       if (!perfil.nombre || !perfil.apellidos) {
         toast.error('Nombre y apellidos son requeridos');
         return;
       }
+
+      const normalizar = (v) => String(v ?? '').trim();
+
+      const formacionAcademica = (Array.isArray(perfil.formacionAcademica) ? perfil.formacionAcademica : [])
+        .filter(Boolean)
+        .filter((f) => {
+          const institucion = normalizar(f?.institucion);
+          const titulo = normalizar(f?.titulo);
+          const añoInicio = f?.añoInicio;
+          const añoFin = f?.añoFin;
+
+          const allBlank =
+            !institucion &&
+            !titulo &&
+            (añoInicio === '' || añoInicio === null || typeof añoInicio === 'undefined') &&
+            (añoFin === '' || añoFin === null || typeof añoFin === 'undefined');
+
+          return !allBlank;
+        })
+        .map((f) => ({
+          ...f,
+          institucion: normalizar(f.institucion),
+          titulo: normalizar(f.titulo),
+        }));
+
+      for (let i = 0; i < formacionAcademica.length; i++) {
+        const f = formacionAcademica[i];
+        const añoInicioVal = f?.añoInicio;
+        const añoInicioOk = typeof añoInicioVal === 'number' && !Number.isNaN(añoInicioVal);
+
+        if (!f.institucion || !f.titulo || !añoInicioOk) {
+          toast.error(`Completa o elimina la formación #${i + 1}`);
+          return;
+        }
+      }
+
+      const experienciaLaboral = (Array.isArray(perfil.experienciaLaboral) ? perfil.experienciaLaboral : [])
+        .filter(Boolean)
+        .filter((e) => {
+          const empresa = normalizar(e?.empresa);
+          const cargo = normalizar(e?.cargo);
+          const descripcion = normalizar(e?.descripcion);
+          const añoInicio = e?.añoInicio;
+          const añoFin = e?.añoFin;
+
+          const allBlank =
+            !empresa &&
+            !cargo &&
+            !descripcion &&
+            (añoInicio === '' || añoInicio === null || typeof añoInicio === 'undefined') &&
+            (añoFin === '' || añoFin === null || typeof añoFin === 'undefined');
+
+          return !allBlank;
+        })
+        .map((e) => ({
+          ...e,
+          empresa: normalizar(e.empresa),
+          cargo: normalizar(e.cargo),
+          descripcion: normalizar(e.descripcion),
+        }));
+
+      for (let i = 0; i < experienciaLaboral.length; i++) {
+        const e = experienciaLaboral[i];
+        const añoInicioVal = e?.añoInicio;
+        const añoInicioOk = typeof añoInicioVal === 'number' && !Number.isNaN(añoInicioVal);
+
+        if (!e.empresa || !e.cargo || !añoInicioOk) {
+          toast.error(`Completa o elimina la experiencia #${i + 1}`);
+          return;
+        }
+      }
+
+      const proyectos = (Array.isArray(perfil.proyectos) ? perfil.proyectos : [])
+        .filter(Boolean)
+        .filter((p) => {
+          const nombre = normalizar(p?.nombre);
+          const url = normalizar(p?.url);
+          const descripcion = normalizar(p?.descripcion);
+          const allBlank = !nombre && !url && !descripcion;
+          return !allBlank;
+        })
+        .map((p) => ({
+          ...p,
+          nombre: normalizar(p.nombre),
+          url: normalizar(p.url),
+          descripcion: normalizar(p.descripcion),
+        }));
+
+      for (let i = 0; i < proyectos.length; i++) {
+        const p = proyectos[i];
+        if (!p.nombre || !p.url) {
+          toast.error(`Completa o elimina el proyecto #${i + 1}`);
+          return;
+        }
+      }
+
+      // ✅ CLAVE: no enviar metacampos de Mongo/Mongoose
+      const { _id, __v, usuarioId, createdAt, updatedAt, ...payload } = perfil;
+
+      payload.formacionAcademica = formacionAcademica;
+      payload.experienciaLaboral = experienciaLaboral;
+      payload.proyectos = proyectos;
 
       const response = await fetch(`${API_URL}/perfil`, {
         method: 'POST',
@@ -232,19 +343,23 @@ const EditarPerfil = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(perfil)
+        body: JSON.stringify(payload)
       });
 
+      const result = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error('Error al guardar el perfil');
+        throw new Error(result?.message || result?.error || 'Error al guardar el perfil');
       }
 
-      toast.success('Perfil actualizado exitosamente');
-      
-      // Opcional: navegar al perfil público
-      // navigate(`/perfil/${perfil.usuarioId}`);
+      toast.success(result?.message || 'Perfil actualizado exitosamente');
+
+      // limpiar borrador solo si guardó bien
+      if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current);
+      clearDraft();
     } catch (error) {
-      toast.error('Error al guardar los cambios');
+      const msg = error instanceof Error ? error.message : 'Error al guardar los cambios';
+      toast.error(msg);
       console.error(error);
     } finally {
       setGuardando(false);
@@ -323,6 +438,84 @@ const EditarPerfil = () => {
   const handleCVSubido = (url) => {
     setPerfil(prev => ({ ...prev, cvUrl: url }));
   };
+
+  const AUTOSAVE_DELAY_MS = 600;
+
+  const userId = (() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || 'null');
+      return u?._id || localStorage.getItem('userId') || 'anon';
+    } catch {
+      return localStorage.getItem('userId') || 'anon';
+    }
+  })();
+
+  const DRAFT_KEY = `komuness:editarPerfil:draft:${userId}`;
+
+  const autosaveTimeoutRef = useRef(null);
+  const skipFirstAutosaveRef = useRef(true);
+
+  const readDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const draftPerfil = parsed?.perfil;
+      return draftPerfil && typeof draftPerfil === 'object' ? draftPerfil : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeDraft = (perfilState) => {
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ updatedAt: Date.now(), perfil: perfilState })
+      );
+    } catch {
+      // ignore (quota / privacy mode)
+    }
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    const draft = readDraft();
+    if (draft) {
+      setPerfil(prev => ({
+        ...prev,
+        ...draft,
+        redesSociales: { ...prev.redesSociales, ...(draft.redesSociales || {}) },
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (skipFirstAutosaveRef.current) {
+      skipFirstAutosaveRef.current = false;
+      return;
+    }
+
+    if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current);
+
+    autosaveTimeoutRef.current = setTimeout(() => {
+      writeDraft(perfil);
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => {
+      if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current);
+    };
+  }, [perfil, loading]);
 
   if (loading) {
     return (
@@ -543,7 +736,10 @@ const EditarPerfil = () => {
                       <input
                         type="number"
                         value={formacion.añoInicio}
-                        onChange={(e) => handleFormacionChange(index, 'añoInicio', parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          handleFormacionChange(index, 'añoInicio', v === '' ? '' : parseInt(v, 10));
+                        }}
                       />
                     </div>
 
@@ -552,7 +748,10 @@ const EditarPerfil = () => {
                       <input
                         type="number"
                         value={formacion.añoFin}
-                        onChange={(e) => handleFormacionChange(index, 'añoFin', e.target.value ? parseInt(e.target.value) : '')}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          handleFormacionChange(index, 'añoFin', v === '' ? '' : parseInt(v, 10));
+                        }}
                         placeholder="Dejar vacío si continúa"
                       />
                     </div>
@@ -617,7 +816,10 @@ const EditarPerfil = () => {
                       <input
                         type="number"
                         value={experiencia.añoInicio}
-                        onChange={(e) => handleExperienciaChange(index, 'añoInicio', parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          handleExperienciaChange(index, 'añoInicio', v === '' ? '' : parseInt(v, 10));
+                        }}
                       />
                     </div>
 
@@ -626,7 +828,10 @@ const EditarPerfil = () => {
                       <input
                         type="number"
                         value={experiencia.añoFin}
-                        onChange={(e) => handleExperienciaChange(index, 'añoFin', e.target.value ? parseInt(e.target.value) : '')}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          handleExperienciaChange(index, 'añoFin', v === '' ? '' : parseInt(v, 10));
+                        }}
                         placeholder="Dejar vacío si continúa"
                       />
                     </div>

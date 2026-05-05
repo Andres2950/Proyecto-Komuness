@@ -152,37 +152,65 @@ export const obtenerMiPerfil = async (req: Request, res: Response): Promise<void
  */
 export const crearOActualizarPerfil = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user._id;
-    const datosActualizados = req.body;
+    const userId = (req as any).user?._id;
 
-    // Verificar que el usuario existe
+    const datosActualizados: any = { ...(req.body || {}) };
+
+    // ✅ Nunca permitir que el cliente controle metacampos / relación
+    delete datosActualizados._id;
+    delete datosActualizados.__v;
+    delete datosActualizados.usuarioId;
+    delete datosActualizados.createdAt;
+    delete datosActualizados.updatedAt;
+
     const usuario = await modelUsuario.findById(userId);
     if (!usuario) {
       res.status(404).json({ message: 'Usuario no encontrado' });
       return;
     }
 
-    // Buscar perfil existente
     let perfil = await modelPerfil.findOne({ usuarioId: userId });
 
     if (perfil) {
-      // Actualizar perfil existente
-      Object.assign(perfil, datosActualizados);
+      perfil.set(datosActualizados);
       await perfil.save();
     } else {
-      // Crear nuevo perfil
       perfil = await modelPerfil.create({
         usuarioId: userId,
         ...datosActualizados
       });
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'Perfil actualizado exitosamente',
-      data: perfil 
+      data: perfil
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en crearOActualizarPerfil:', error);
+
+    if (error?.name === 'ValidationError') {
+      const details: Record<string, string> = {};
+      if (error.errors) {
+        for (const key of Object.keys(error.errors)) {
+          details[key] = error.errors[key]?.message || 'Campo inválido';
+        }
+      }
+      res.status(400).json({
+        message: 'Datos de perfil inválidos',
+        error: error.message || 'ValidationError',
+        details
+      });
+      return;
+    }
+
+    if (error?.name === 'VersionError') {
+      res.status(409).json({
+        message: 'Conflicto al guardar el perfil. Recarga la página e intenta nuevamente.',
+        error: error.message || 'VersionError'
+      });
+      return;
+    }
+
     res.status(500).json({
       message: 'Error al actualizar el perfil',
       error: error instanceof Error ? error.message : 'Error desconocido'
