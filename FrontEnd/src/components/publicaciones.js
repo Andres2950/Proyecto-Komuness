@@ -2,7 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { IoMdArrowRoundBack } from "react-icons/io";
+import { toast } from 'react-hot-toast';
 import '../CSS/publicaciones.css';
+
+
 import PublicacionCard from './publicacionCard';
 import FormularioPublicacion from '../pages/formulario';
 import PublicacionModal from './publicacionModal';
@@ -12,6 +15,7 @@ import BuscadorPublicaciones from './buscadorPublicaciones';
 import AlertaLimitePublicaciones from './AlertaLimitePublicaciones';
 import { API_URL } from '../utils/api';
 import LimitePublicaciones from "./limiteDePublicaciones";
+import PublicidadModal from './publicidadModal';
 
 // Base de API robusta (evita /api/api)
 const RAW = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -46,6 +50,11 @@ export const Publicaciones = ({ tag: propTag }) => {
   const [estadoUsuario, setEstadoUsuario] = useState(null);
   const [cargandoEstado, setCargandoEstado] = useState(false);
 
+  // para PUBLICIDAD
+  const [mostrarModalPublicidad, setMostrarModalPublicidad] = useState(false);
+  const [publicidadEditando, setPublicidadEditando] = useState(null); // null = crear desde cero, objeto = editar publicidad
+  const [publicidad, setPublicidad] = useState([]);
+
   //Variables de Usuario
   const UserType = {
     SUPERADMIN: 0,
@@ -54,6 +63,11 @@ export const Publicaciones = ({ tag: propTag }) => {
   };
 
   const esAdmin = [UserType.SUPERADMIN, UserType.ADMIN].includes(Number(user?.tipoUsuario));
+
+  
+  useEffect(()=>{
+    fetchPublicidad(); 
+  }, []);
 
   useEffect(() => {
     const path = location.pathname;
@@ -143,6 +157,76 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
   }
 };
 
+  const fetchPublicidad = async () => {
+    try {
+      const response = await fetch(`${API_URL}/publicidad/get-publicidades`);
+      if (!response.ok) {
+        console.log(response);
+        throw new Error('Error al cargar publicidad');
+      }
+          
+      const data = await response.json();
+      setPublicidad(data.data || []);
+      console.log(data.data);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cargar publicidad');
+    }
+  };
+
+    /////////////////// MODAL publicidad
+    const abrirModalCrearPublicidad = () => {
+        setPublicidadEditando(null);
+        setMostrarModalPublicidad(true);
+    }
+
+
+    const abrirModalEditarPublicidad = (p) => {
+        setPublicidadEditando(p);
+        setMostrarModalPublicidad(true);
+    }
+
+
+    const cerrarModalPublicidad = () => {
+        setPublicidadEditando(null);
+        setMostrarModalPublicidad(false);
+    }
+    const handleSubmitPublicidad = async ({ imagen,
+                descripcion,
+                fechaCaducidad,
+                autor, 
+                activa,
+    publicacionRelacionada }) => {
+        try {
+            const modoCrear = (publicidadEditando == null);
+            const petition_url = modoCrear
+                ? `${API_URL}/publicidad/create-publicidad`
+                : `${API_URL}/publicidad/update-publicidad/${publicidadEditando._id}`;
+            const method = modoCrear ? "POST" : "PUT";
+
+            const res = await fetch(petition_url,{
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify({ imagen, descripcion, fechaCaducidad, autor, activa, publicacionRelacionada }),
+            });
+
+            if (res.ok) {
+                toast.success(modoCrear ? "Publicidad creada" : "Publicidad actualizada");
+                cerrarModalPublicidad();
+                fetchPublicidad();
+              } else {
+                const errorData = await res.json();
+                toast.error(errorData.message || "Error al guardar la publicidad");
+              }
+        } catch (e) {
+            console.error("ERROR PUBLICIDAD: ", e);
+            toast.error("Error al guardar la publicidad");
+        }
+    };
+
   const mostrarBotonVolver = () => {
     const path = location.pathname;
     return path === '/eventos' || path === '/emprendimientos';
@@ -229,7 +313,6 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
         if (response.ok) {
           const data = await response.json();
           setEstadoUsuario(data.data);
-          console.log(data.data)
         }
        
       } catch (error) {
@@ -246,6 +329,7 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
       cargarDatosLimite();
     }
   }, [user]);
+
 
   return (
     <div className="bg-gray-800/80 min-h-screen">
@@ -270,6 +354,35 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
             )}
           </div>
         </div>
+      </div>
+
+      {/*PUBLICIDAD*/}
+      <div className='flex flex-col items-center justify-center gap-2 p-4 max-w-4xl mx-auto mt-4 rounded-xl bg-white/10'>
+        <div>
+            AAAAAAAAAAAAAAAAAAAAAAAAa carrusel aqui
+        </div>
+     
+        {/*BOTON DE AGREGAR SOLO PARA ADMINS*/}
+        { esAdmin && (
+        <div className="max-w-6xl px-4 py-2 text-white">
+            <div>
+            <button
+            onClick={() => abrirModalCrearPublicidad()}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium p-4 rounded-lg shadow"
+            >
+            + Agregar Publicidad
+            </button>
+            </div>
+
+            {mostrarModalPublicidad && (
+              <PublicidadModal
+                publicidad={publicidadEditando}
+                onClose={cerrarModalPublicidad}
+                onSubmit={handleSubmitPublicidad}
+              />
+             )}
+      
+        </div>)}
       </div>
 
       {/* Mensaje de búsqueda */}
