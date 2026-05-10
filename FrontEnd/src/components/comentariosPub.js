@@ -215,7 +215,12 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
                   <p className="text-sm text-gray-300 font-semibold">
                     {comentario.autor.nombre ? comentario.autor.nombre : comentario.autor}{" "}
                     <span className="text-xs text-gray-400">
-                      • {comentario.fecha}
+                      • {
+                        new Date(comentario.fecha).toLocaleString("es-CR", {
+                        dateStyle: "medium",
+                        timeStyle: "short"
+                        })
+                      }
                     </span>
                   </p>
                   <p className="text-white break-words">{comentario.contenido}</p>  
@@ -253,7 +258,12 @@ const ComentariosPub = ({ comentarios, setComentarios, publicacionId }) => {
                       <p className="text-sm text-gray-300 font-semibold">
                         {respuestaObj.autor.nombre}{" "}
                         <span className="text-xs text-gray-400">
-                        • {respuestaObj.fecha}
+                        • {
+                            new Date(respuestaObj.fecha).toLocaleString("es-CR", {
+                            dateStyle: "medium",
+                            timeStyle: "short"
+                            })
+                          }
                         </span>
                       </p>
                       <p className="text-white break-words">
