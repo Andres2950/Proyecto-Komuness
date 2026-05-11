@@ -660,7 +660,7 @@ export const addComentario = async (req: Request, res: Response): Promise<void> 
     );
 
     if (!publicacionActualizada) {
-      res.status(404).json({ message: 'Publicacion no encontrada' });
+      res.status(404).json({ message: 'Publicación no encontrada' });
       return;
     }
 
@@ -669,7 +669,7 @@ export const addComentario = async (req: Request, res: Response): Promise<void> 
 
     if (autorPublicacionId && autorComentarioId && autorPublicacionId !== autorComentarioId) {
       const nombreComentarista = [user.nombre, user.apellido].filter(Boolean).join(' ').trim();
-      const tituloPublicacion = publicacionActualizada.titulo || 'tu publicacion';
+      const tituloPublicacion = publicacionActualizada.titulo || 'tu publicación';
 
       try {
         await createComentarioPublicacionNotificacion({
@@ -679,7 +679,7 @@ export const addComentario = async (req: Request, res: Response): Promise<void> 
           nombreComentarista
         });
       } catch (notificacionError) {
-        console.warn('No se pudo crear notificacion de comentario:', notificacionError);
+        console.warn('No se pudo crear notificación de comentario:', notificacionError);
       }
     }
 

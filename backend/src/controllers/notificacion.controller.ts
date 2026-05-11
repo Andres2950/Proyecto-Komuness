@@ -61,15 +61,15 @@ export const createNotificacion = async (
       return;
     }
     if (!descripcion?.trim()) {
-      res.status(400).json({ message: "La descripcion es obligatoria" });
+      res.status(400).json({ message: "La descripción es obligatoria" });
       return;
     }
     if (!destinatario || !mongoose.Types.ObjectId.isValid(destinatario)) {
-      res.status(400).json({ message: "destinatario invalido" });
+      res.status(400).json({ message: "Destinatario inválido" });
       return;
     }
     if (publicacionId && !mongoose.Types.ObjectId.isValid(publicacionId)) {
-      res.status(400).json({ message: "publicacionId invalido" });
+      res.status(400).json({ message: "ID de publicación inválido" });
       return;
     }
 
@@ -84,7 +84,7 @@ export const createNotificacion = async (
     res.status(201).json(saved);
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: "Error al crear la notificacion" });
+    res.status(500).json({ message: "Error al crear la notificación" });
   }
 };
 
@@ -112,14 +112,14 @@ export const deleteNotificacion = async (
     const notificacionAEliminar = await modelNotificacion.findOneAndDelete(filtro);
 
     if (!notificacionAEliminar) {
-      res.status(404).json({ message: "No se encontro la notificacion" });
+      res.status(404).json({ message: "No se encontró la notificación" });
       return;
     }
 
-    res.status(200).json({ message: "Notificacion eliminada correctamente" });
+    res.status(200).json({ message: "Notificación eliminada correctamente" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al eliminar la notificacion" });
+    res.status(500).json({ message: "Error al eliminar la notificación" });
   }
 };
 
@@ -136,7 +136,7 @@ export const updateNotificacion = async (
 
     if (nombre !== undefined) {
       if (!nombre?.trim()) {
-        res.status(400).json({ message: "El nombre no puede ir vacio" });
+        res.status(400).json({ message: "El nombre no puede ir vacío" });
         return;
       }
       data.nombre = nombre.trim();
@@ -144,7 +144,7 @@ export const updateNotificacion = async (
 
     if (descripcion !== undefined) {
       if (!descripcion?.trim()) {
-        res.status(400).json({ message: "La descripcion no puede ir vacia" });
+        res.status(400).json({ message: "La descripción no puede ir vacía" });
         return;
       }
       data.descripcion = descripcion.trim();
@@ -154,7 +154,7 @@ export const updateNotificacion = async (
 
     if (destinatario !== undefined) {
       if (!mongoose.Types.ObjectId.isValid(destinatario)) {
-        res.status(400).json({ message: "destinatario invalido" });
+        res.status(400).json({ message: "Destinatario inválido" });
         return;
       }
       data.destinatario = destinatario;
@@ -162,7 +162,7 @@ export const updateNotificacion = async (
 
     if (publicacionId !== undefined) {
       if (publicacionId !== null && !mongoose.Types.ObjectId.isValid(publicacionId)) {
-        res.status(400).json({ message: "publicacionId invalido" });
+        res.status(400).json({ message: "ID de publicación inválido" });
         return;
       }
       data.publicacionId = publicacionId;
@@ -177,17 +177,17 @@ export const updateNotificacion = async (
     );
 
     if (!notificacionActualizada) {
-      res.status(404).json({ message: "Notificacion no encontrada" });
+      res.status(404).json({ message: "Notificación no encontrada" });
       return;
     }
 
     res.status(200).json({
       data: notificacionActualizada,
-      message: "Notificacion actualizada correctamente",
+      message: "Notificación actualizada correctamente",
     });
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: "Error al actualizar la notificacion" });
+    res.status(500).json({ message: "Error al actualizar la notificación" });
   }
 };
 
@@ -216,16 +216,16 @@ export const notificacionSeenBy = async (
     );
 
     if (!notificacionActualizada) {
-      res.status(404).json({ message: "Notificacion no encontrada" });
+      res.status(404).json({ message: "Notificación no encontrada" });
       return;
     }
 
     res.status(200).json({
       data: notificacionActualizada,
-      message: "Notificacion marcada como vista",
+      message: "Notificación marcada como vista",
     });
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: "Error al actualizar la notificacion" });
+    res.status(500).json({ message: "Error al actualizar la notificación" });
   }
 };

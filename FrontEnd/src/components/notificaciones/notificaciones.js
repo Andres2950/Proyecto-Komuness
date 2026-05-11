@@ -106,14 +106,14 @@ const Notificaciones = ({
       });
 
       if (!res.ok) {
-        throw new Error("No se pudo eliminar la notificacion");
+        throw new Error("No se pudo eliminar la notificación");
       }
       return true;
     } catch (_err) {
       setNtfs(prev);
       syncCount(prev);
       if (!silent) {
-        setError("No se pudo eliminar la notificacion");
+        setError("No se pudo eliminar la notificación");
       }
       return false;
     }
@@ -168,7 +168,7 @@ const Notificaciones = ({
 
         {!token || !userId ? (
           <p className="text-sm text-slate-200">
-            Inicia sesion para ver tus notificaciones.
+            Inicia sesión para ver tus notificaciones.
           </p>
         ) : loading ? (
           <p className="text-sm text-slate-200">Cargando notificaciones...</p>
@@ -199,8 +199,8 @@ const Notificaciones = ({
                       e.stopPropagation();
                       eliminarNotificacion(ntf._id);
                     }}
-                    aria-label="Eliminar notificacion"
-                    title="Eliminar notificacion"
+                    aria-label="Eliminar notificación"
+                    title="Eliminar notificación"
                   >
                     <AiOutlineClose className="w-5 h-5" />
                   </button>

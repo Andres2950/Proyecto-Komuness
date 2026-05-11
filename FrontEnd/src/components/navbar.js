@@ -144,7 +144,7 @@ export const Navbar = () => {
         <button
           className="botonMovil"
           onClick={toggleMenu}
-          aria-label={menuAbierto ? "Cerrar menu" : "Abrir menu"}
+          aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={menuAbierto}
         >
           {menuAbierto ? <AiOutlineClose /> : <AiOutlineMenu />}
@@ -209,7 +209,7 @@ export const Navbar = () => {
             >
               <AiOutlineUser className="user-icon" />
               <span className="menu-text-movil">
-                {goToLogin ? "Mi Perfil" : "Iniciar Sesion"}
+                {goToLogin ? "Mi Perfil" : "Iniciar Sesión"}
               </span>
             </li>
             <li

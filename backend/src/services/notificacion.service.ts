@@ -18,7 +18,7 @@ type CreateComentarioPublicacionNotificacionInput = {
 
 function ensureObjectId(id: string, fieldName: string): void {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new Error(`${fieldName} invalido`);
+    throw new Error(`${fieldName} inválido`);
   }
 }
 
@@ -53,13 +53,13 @@ export async function createComentarioPublicacionNotificacion(
   const { destinatarioId, publicacionId, tituloPublicacion, nombreComentarista } =
     input;
 
-  const tituloSeguro = tituloPublicacion?.trim() || "tu publicacion";
+  const tituloSeguro = tituloPublicacion?.trim() || "tu publicación";
   const autorSeguro = nombreComentarista?.trim() || "Un usuario";
 
   return createNotificacion({
     destinatarioId,
     publicacionId,
-    nombre: "Nuevo comentario en tu publicacion",
-    descripcion: `${autorSeguro} comento en "${tituloSeguro}"`,
+    nombre: "Nuevo comentario en tu publicación",
+    descripcion: `${autorSeguro} comentó en "${tituloSeguro}"`,
   });
 }
