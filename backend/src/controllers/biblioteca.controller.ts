@@ -158,27 +158,27 @@ class BibliotecaController {
         
         // RF023: Los usuarios básicos/premium SÍ pueden subir a carpetas (no hay restricción aquí)
         // Solo NO pueden CREAR carpetas (eso se valida en createFolder)
-
-        //3.5.4 - Validación de usuarios dentro del banco
-        const perfil = await modelPerfil.findOne({ usuarioId: userId });
-
-        if (!perfil) {
-            res.status(200).json({
-                success: false,
-                message: "El perfil público no existe"
-            });
-            return;
-        }
-
-        if (!perfil?.enBancoProfesionales){
-            res.status(200).json({
-                success: false,
-                message: "Este usuario no está en el banco de profesionales"
-            });
-            return; 
-        }
             
         try {
+
+            //3.5.4 - Validación de usuarios dentro del banco
+            const perfil = await modelPerfil.findOne({ usuarioId: userId });
+
+            if (!perfil) {
+                res.status(200).json({
+                    success: false,
+                    message: "El perfil público no existe"
+                });
+                return;
+            }
+
+            if (!perfil?.enBancoProfesionales){
+                res.status(200).json({
+                    success: false,
+                    message: "Este usuario no está en el banco de profesionales"
+                });
+                return; 
+            }
 
             const results = await Promise.all(files.map(async (file) => {
 
