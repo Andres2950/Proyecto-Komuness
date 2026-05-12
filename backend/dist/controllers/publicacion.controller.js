@@ -19,6 +19,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const gridfs_1 = require("../utils/gridfs");
 const mail_1 = require("../utils/mail"); // usa el mismo transporter que recuperación
 const usuario_model_1 = require("../models/usuario.model"); // ← Modelo de usuarios
+const perfil_model_1 = require("../models/perfil.model");
 const LOG_ON = process.env.LOG_PUBLICACION === '1';
 // Utilidad: normaliza precio (string → number | undefined)
 function parsePrecio(input) {
@@ -285,6 +286,22 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
         if (!userId) {
             res.status(401).json({ ok: false, message: 'Usuario no autenticado' });
+            return;
+        }
+        //3.5.2 - Validación de usuarios dentro del banco
+        const perfil = yield perfil_model_1.modelPerfil.findOne({ usuarioId: userId });
+        if (!perfil) {
+            res.status(200).json({
+                success: false,
+                message: "El perfil público no existe"
+            });
+            return;
+        }
+        if (!(perfil === null || perfil === void 0 ? void 0 : perfil.enBancoProfesionales)) {
+            res.status(200).json({
+                success: false,
+                message: "Este usuario no está en el banco de profesionales"
+            });
             return;
         }
         // --- Recolectar archivos desde Multer (array o fields) ---

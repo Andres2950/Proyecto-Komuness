@@ -102,7 +102,7 @@ const PublicidadModal = ({
             <textarea
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
-                rows={5}
+                rows={1}
                 placeholder="Descripción de la publicidad"
                 className="w-full px-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />

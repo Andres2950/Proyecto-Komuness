@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { toast } from 'react-hot-toast';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import '../CSS/publicaciones.css';
 
 
@@ -54,6 +55,7 @@ export const Publicaciones = ({ tag: propTag }) => {
   const [mostrarModalPublicidad, setMostrarModalPublicidad] = useState(false);
   const [publicidadEditando, setPublicidadEditando] = useState(null); // null = crear desde cero, objeto = editar publicidad
   const [publicidad, setPublicidad] = useState([]);
+  const [currentPublicidadIndex, setCurrentPublicidadIndex] = useState(0);
 
   //Variables de Usuario
   const UserType = {
@@ -191,6 +193,23 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
         setPublicidadEditando(null);
         setMostrarModalPublicidad(false);
     }
+
+
+    const nextPublicidad = () => {
+        setCurrentPublicidadIndex((prev) =>
+            prev === publicidad.length - 1
+                ? 0
+                : prev + 1
+        );
+    };
+
+    const prevPublicidad = () => {
+        setCurrentPublicidadIndex((prev) =>
+            prev === 0
+            ? publicidad.length - 1
+            : prev - 1
+        );
+    };
     const handleSubmitPublicidad = async ({ 
                 imagen,
                 descripcion,
@@ -241,6 +260,32 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
             toast.error("Error al guardar la publicidad");
         }
     };
+
+    const handleDeletePublicidad = async (pub) => {
+        if (!window.confirm('¿Está seguro de que quiere eliminar esta publicidad?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/publicidad/delete-publicidad/${pub._id}`, {
+                method: 'DELETE',
+                headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (response.ok) {
+                toast.success('Tutorial eliminado');
+                if (currentPublicidadIndex >= publicidad.length - 1) {
+                    setCurrentPublicidadIndex(Math.max(0, publicidad.length - 2));
+                }
+                fetchPublicidad();
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.message || 'Error al eliminar la publicidad');
+            }
+        } catch (e) {
+            toast.error('Error al eliminar la publicidad');
+            console.error(e);
+        }
+    }
 
   const mostrarBotonVolver = () => {
     const path = location.pathname;
@@ -373,10 +418,78 @@ const obtenerPublicaciones = async (tag, page = 1, limit = limite, categoriaId =
 
       {/*PUBLICIDAD*/}
       <div className='flex flex-col items-center justify-center gap-2 p-4 max-w-4xl mx-auto mt-4 rounded-xl bg-white/10'>
-        <div>
-            AAAAAAAAAAAAAAAAAAAAAAAAa carrusel aqui
+        {publicidad && publicidad.length > 0 && (
+            <div className='w-full relative bg-gray-800 rounded-2xl p-4 shadow-2xl'>
+                <div className="relative h-56 md:h-80 lg:h-[450px] rounded-xl overflow-hidden">
+                    {/*Imagen*/}
+                    <img
+                        src={publicidad[currentPublicidadIndex]?.imagen}
+                        alt="Publicidad"
+                        className='w-full h-full object-cover'
+                    />
+                    {/*Flechas*/}
+                    {publicidad.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevPublicidad}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full"
+                        >
+                          <FaChevronLeft />
+                        </button>
+
+                        <button
+                          onClick={nextPublicidad}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full"
+                        >
+                          <FaChevronRight />
+                        </button>
+                      </>
+                    )}
+                </div>
+                {/*Descripcion*/}
+                <div className="mt-6 text-center">
+                    <p className="text-gray-200 text-lg"> {publicidad[currentPublicidadIndex]?.descripcion} </p>
+                </div>
+                {/* Indicadores */}
+                {publicidad.length > 1 && (
+                    <div className="flex justify-center mt-6 gap-2">
+                      {publicidad.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentPublicidadIndex(index)}
+                          className={`w-3 h-3 rounded-full transition-all ${
+                            index === currentPublicidadIndex
+                              ? "bg-white scale-125"
+                              : "bg-gray-500 hover:bg-gray-400"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                )}
+
+                {/*EDITAR Y BORRAR SOLO PARA ADMINS*/}
+                {esAdmin && (
+                <div className="flex justify-center gap-3 mt-6">
+
+                  <button
+                    onClick={() => abrirModalEditarPublicidad(publicidad[currentPublicidadIndex])}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    onClick={() => handleDeletePublicidad(publicidad[currentPublicidadIndex])}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
+
         </div>
-     
+        )}
+
         {/*BOTON DE AGREGAR SOLO PARA ADMINS*/}
         { esAdmin && (
         <div className="max-w-6xl px-4 py-2 text-white">
