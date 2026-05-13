@@ -39,7 +39,7 @@ const Notificaciones = ({
   );
 
   const cargarNotificaciones = useCallback(async () => {
-    if (!token || !userId) {
+    if (!token) {
       setNtfs([]);
       syncCount([]);
       return;
