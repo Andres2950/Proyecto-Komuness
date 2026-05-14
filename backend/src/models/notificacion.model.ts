@@ -21,7 +21,7 @@ notificacionSchema.index({ destinatario: 1, createdAt: -1 });
 notificacionSchema.index({ destinatario: 1, vistoPor: 1 });
 notificacionSchema.index({ fechaCaducidad: 1 }, { expireAfterSeconds: 0 });
 notificacionSchema.index({ recipientes: 1, createdAt: -1 });
-notificacionSchema.index({ recipientes: 1, vistoPor: 1 });
+// notificacionSchema.index({ recipientes: 1, vistoPor: 1 });
 notificacionSchema.index({ vistoPor: 1 });
 
 export const modelNotificacion = model<INotificacion>("Notificacion", notificacionSchema);
