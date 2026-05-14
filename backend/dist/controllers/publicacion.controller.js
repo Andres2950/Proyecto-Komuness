@@ -13,12 +13,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchByTitulo = exports.searchPublicacionesAvanzada = exports.searchPublicacionesByTitulo = exports.getEventosPorFecha = exports.filterPublicaciones = exports.addComentario = exports.deletePublicacion = exports.updatePublicacion = exports.getPublicacionesByCategoria = exports.getPublicacionById = exports.getPublicacionesByTag = exports.createPublicacionA = exports.createPublicacion = void 0;
+exports.searchByTitulo = exports.searchPublicacionesAvanzada = exports.searchPublicacionesByTitulo = exports.getEventosPorFecha = exports.filterPublicaciones = exports.addRespuesta = exports.addComentario = exports.deletePublicacion = exports.updatePublicacion = exports.getPublicacionesByCategoria = exports.getPublicacionById = exports.getPublicacionesByTag = exports.createPublicacionA = exports.createPublicacion = void 0;
 const publicacion_model_1 = require("../models/publicacion.model");
 const mongoose_1 = __importDefault(require("mongoose"));
 const gridfs_1 = require("../utils/gridfs");
+<<<<<<< HEAD
 const mail_1 = require("../utils/mail"); // usa el mismo transporter que recuperación
 const usuario_model_1 = require("../models/usuario.model"); // ← Modelo de usuarios
+const perfil_model_1 = require("../models/perfil.model");
+=======
+const mail_1 = require("../utils/mail");
+const usuario_model_1 = require("../models/usuario.model");
+const notificacion_service_1 = require("../services/notificacion.service");
+>>>>>>> Alejandro_Comment_Notification
 const LOG_ON = process.env.LOG_PUBLICACION === '1';
 // Utilidad: normaliza precio (string → number | undefined)
 function parsePrecio(input) {
@@ -285,6 +292,22 @@ const createPublicacionA = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
         if (!userId) {
             res.status(401).json({ ok: false, message: 'Usuario no autenticado' });
+            return;
+        }
+        //3.5.2 - Validación de usuarios dentro del banco
+        const perfil = yield perfil_model_1.modelPerfil.findOne({ usuarioId: userId });
+        if (!perfil) {
+            res.status(200).json({
+                success: false,
+                message: "El perfil público no existe"
+            });
+            return;
+        }
+        if (!(perfil === null || perfil === void 0 ? void 0 : perfil.enBancoProfesionales)) {
+            res.status(200).json({
+                success: false,
+                message: "Este usuario no está en el banco de profesionales"
+            });
             return;
         }
         // --- Recolectar archivos desde Multer (array o fields) ---
@@ -558,16 +581,52 @@ const deletePublicacion = (req, res) => __awaiter(void 0, void 0, void 0, functi
 exports.deletePublicacion = deletePublicacion;
 // Agregar comentario
 const addComentario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d;
     const { id } = req.params;
-    const { autor, contenido, fecha } = req.body;
-    const nuevoComentario = { autor, contenido, fecha };
+    const { contenido } = req.body;
+    const user = req.user;
+    if (!user) {
+        res.status(401).json({ message: "No autorizado" });
+        return;
+    }
+    if (!(contenido === null || contenido === void 0 ? void 0 : contenido.trim())) {
+        res.status(400).json({ message: "El contenido del comentario es obligatorio" });
+        return;
+    }
+    const nuevoComentario = {
+        autor: {
+            _id: user._id,
+            nombre: user.nombre,
+            apellido: user.apellido,
+            avatar: user.avatar
+        },
+        contenido: contenido.trim(),
+        fecha: new Date().toISOString()
+    };
     try {
         const publicacionActualizada = yield publicacion_model_1.modelPublicacion.findByIdAndUpdate(id, { $push: { comentarios: nuevoComentario } }, { new: true });
         if (!publicacionActualizada) {
             res.status(404).json({ message: 'Publicación no encontrada' });
             return;
         }
-        res.status(201).json(publicacionActualizada);
+        const autorPublicacionId = (_b = (_a = publicacionActualizada.autor) === null || _a === void 0 ? void 0 : _a.toString) === null || _b === void 0 ? void 0 : _b.call(_a);
+        const autorComentarioId = (_d = (_c = user._id) === null || _c === void 0 ? void 0 : _c.toString) === null || _d === void 0 ? void 0 : _d.call(_c);
+        if (autorPublicacionId && autorComentarioId && autorPublicacionId !== autorComentarioId) {
+            const nombreComentarista = [user.nombre, user.apellido].filter(Boolean).join(' ').trim();
+            const tituloPublicacion = publicacionActualizada.titulo || 'tu publicación';
+            try {
+                yield (0, notificacion_service_1.createComentarioPublicacionNotificacion)({
+                    destinatarioId: autorPublicacionId,
+                    publicacionId: id,
+                    tituloPublicacion,
+                    nombreComentarista
+                });
+            }
+            catch (notificacionError) {
+                console.warn('No se pudo crear notificación de comentario:', notificacionError);
+            }
+        }
+        res.status(201).json(publicacionActualizada.comentarios);
     }
     catch (error) {
         console.warn('Error al agregar comentario:', error);
@@ -576,6 +635,48 @@ const addComentario = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.addComentario = addComentario;
+// Agregar Respuesta
+const addRespuesta = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id, comentarioId } = req.params;
+    const { contenido, replyTo } = req.body;
+    const user = req.user;
+    if (!user) {
+        res.status(401).json({ message: "No autorizado" });
+        return;
+    }
+    const nuevaRespuesta = {
+        autor: {
+            _id: user._id,
+            nombre: user.nombre,
+            apellido: user.apellido,
+            avatar: user.avatar
+        },
+        contenido,
+        fecha: new Date().toISOString(),
+        replyTo
+    };
+    try {
+        const publicacionActualizada = yield publicacion_model_1.modelPublicacion.findOneAndUpdate({
+            _id: id,
+            "comentarios._id": new mongoose_1.default.Types.ObjectId(comentarioId)
+        }, {
+            $push: {
+                "comentarios.$.respuestas": nuevaRespuesta
+            }
+        }, { new: true });
+        if (!publicacionActualizada) {
+            res.status(404).json({ message: 'Publicación no encontrada' });
+            return;
+        }
+        res.status(201).json(publicacionActualizada.comentarios);
+    }
+    catch (error) {
+        console.warn('Error al agregar respuesta:', error);
+        const err = error;
+        res.status(500).json({ message: err.message });
+    }
+});
+exports.addRespuesta = addRespuesta;
 // filtros de búsqueda
 const filterPublicaciones = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

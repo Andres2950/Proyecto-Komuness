@@ -7,6 +7,7 @@ import AlertaLimitePublicaciones from '../components/AlertaLimitePublicaciones';
 import '../CSS/formularioPublicacion.css';
 import MapaUbicacion from '../components/MapaUbicacion';
 import TextAreaComponent from '../components/TextAreaComponent';
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
@@ -43,6 +44,8 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     ...valoresIniciales,
     tag: openTag || "",
   });
+
+  useLockBodyScroll(isOpen);
 
    useEffect(() => {
     if (isOpen) {

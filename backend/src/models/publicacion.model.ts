@@ -4,10 +4,32 @@ import { model, Schema } from 'mongoose';
 import { calculatePublicationExpirationDate, calculateRemainingDays } from '../utils/publicacionExpiration';
 
 //schema comentario
-const comentarioSchema = new Schema<IComentario>({
-  autor: { type: String, required: true },
-  contenido: { type: String, required: true },
-  fecha: { type: String, required: true }
+const comentarioSchema = new Schema({
+  autor: {
+    _id: String,
+    nombre: String,
+    apellido: String,
+    avatar: String
+  },
+  contenido: {type: String, required: true},
+  fecha: String,
+  respuestas: [
+    {
+      autor: {
+        _id: String,
+        nombre: String,
+        apellido: String,
+        avatar: String
+      },
+      contenido: String,
+      fecha: String,
+      replyTo: {
+        _id: String,
+        nombre: String,
+        apellido: String
+      }
+    }
+  ]
 });
 
 //schema adjunto

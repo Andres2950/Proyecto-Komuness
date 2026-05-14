@@ -318,6 +318,25 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
       return;
     }
 
+    //3.5.2 - Validación de usuarios dentro del banco
+    const perfil = await modelPerfil.findOne({ usuarioId: userId });
+
+    if (!perfil) {
+        res.status(200).json({
+            success: false,
+            message: "El perfil público no existe"
+        });
+        return;
+    }
+
+    if (!perfil?.enBancoProfesionales){
+        res.status(200).json({
+            success: false,
+            message: "Este usuario no está en el banco de profesionales"
+        });
+        return; 
+    }
+
     // --- Recolectar archivos desde Multer (array o fields) ---
     let files: Express.Multer.File[] = [];
     if (Array.isArray(req.files)) {
@@ -634,9 +653,30 @@ export const deletePublicacion = async (req: Request, res: Response): Promise<vo
 // Agregar comentario
 export const addComentario = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { autor, contenido, fecha } = req.body;
+  const { contenido } = req.body;
 
-  const nuevoComentario: IComentario = { autor, contenido, fecha };
+  const user = req.user;
+
+  if (!user) {
+    res.status(401).json({ message: "No autorizado" });
+    return;
+  }
+
+  if (!contenido?.trim()) {
+    res.status(400).json({ message: "El contenido del comentario es obligatorio" });
+    return;
+  }
+
+  const nuevoComentario = {
+    autor: {
+      _id: user._id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      avatar: user.avatar
+    },
+    contenido: contenido.trim(),
+    fecha: new Date().toISOString()
+  };
 
   try {
     const publicacionActualizada = await modelPublicacion.findByIdAndUpdate(
@@ -649,9 +689,126 @@ export const addComentario = async (req: Request, res: Response): Promise<void> 
       res.status(404).json({ message: 'Publicación no encontrada' });
       return;
     }
-    res.status(201).json(publicacionActualizada);
+
+    const autorPublicacionId = publicacionActualizada.autor?.toString?.();
+    const autorComentarioId = user._id?.toString?.();
+
+    if (autorPublicacionId && autorComentarioId && autorPublicacionId !== autorComentarioId) {
+      const nombreComentarista = [user.nombre, user.apellido].filter(Boolean).join(' ').trim();
+      const tituloPublicacion = publicacionActualizada.titulo || 'tu publicación';
+
+      try {
+        await createComentarioPublicacionNotificacion({
+          destinatarioId: autorPublicacionId, //temporalmente
+          recipientes: [autorPublicacionId],
+          publicacionId: id,
+          tituloPublicacion,
+          nombreComentarista
+        });
+      } catch (notificacionError) {
+        console.warn('No se pudo crear notificación de comentario:', notificacionError);
+      }
+    }
+
+    res.status(201).json(publicacionActualizada.comentarios);
   } catch (error) {
     console.warn('Error al agregar comentario:', error);
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
+  }
+};
+// Agregar Respuesta
+export const addRespuesta = async (req: Request, res: Response): Promise<void> => {
+  const { id, comentarioId } = req.params;
+  const { contenido, replyTo } = req.body;
+  
+  const user = req.user;
+
+  if (!user) {
+    res.status(401).json({ message: "No autorizado" });
+    return;
+  }
+  const nuevaRespuesta = {
+    autor: {
+      _id: user._id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      avatar: user.avatar
+    },
+    contenido,
+    fecha: new Date().toISOString(),
+    replyTo
+  };
+
+  try {
+    const publicacionActualizada = await modelPublicacion.findOneAndUpdate(
+      {
+        _id: id,
+          "comentarios._id": new mongoose.Types.ObjectId(comentarioId)
+      },
+      {
+        $push: {
+          "comentarios.$.respuestas": nuevaRespuesta
+        }
+      },
+      { new: true }
+    );
+
+    if (!publicacionActualizada) {
+      res.status(404).json({ message: 'Publicación no encontrada' });
+      return;
+    }
+    const comentarios = publicacionActualizada.comentarios || [];
+    const comentarioPrincipal = comentarios.find((comentario) => comentario._id?.toString() === comentarioId);
+    
+    let usuarioObjetivoId: string | null = null;
+
+    if (comentarioPrincipal) {
+      // comentario principal
+      if (
+        comentarioPrincipal._id?.toString() ===
+        replyTo?._id
+      ) {
+        usuarioObjetivoId = comentarioPrincipal.autor?._id?.toString?.() || null;
+      } else {
+        // respuesta específica
+        const respuestas = Array.isArray(comentarioPrincipal.respuestas)
+          ? comentarioPrincipal.respuestas
+          : [];
+        const respuestaObjetivo = respuestas.find((respuesta: any) => respuesta._id?.toString() === replyTo?._id);
+
+        usuarioObjetivoId = respuestaObjetivo?.autor?._id?.toString?.() || null;
+      }
+    }
+    const usuarioActualId = user._id?.toString?.();
+
+    // no notificarse a sí mismo
+    if ( usuarioObjetivoId && usuarioActualId && usuarioObjetivoId !== usuarioActualId) {
+      const nombreRespondedor = [user.nombre, user.apellido,].filter(Boolean).join(" ").trim();
+
+      const tituloPublicacion = publicacionActualizada.titulo || "tu publicación";
+
+      try {
+        await createRespuestaComentarioNotificacion({
+          destinatarioId: usuarioObjetivoId, // temporal
+          recipientes: [usuarioObjetivoId],
+
+          publicacionId: id,
+          tituloPublicacion,
+
+          nombreRespondedor: nombreRespondedor
+        });
+      } catch (notificacionError) {
+        console.warn(
+          "No se pudo crear notificación:",
+          notificacionError
+        );
+      }
+    }
+
+    res.status(201).json(publicacionActualizada.comentarios);
+  } catch (error) {
+    console.warn('Error al agregar respuesta:', error);
     const err = error as Error;
     res.status(500).json({ message: err.message });
   }

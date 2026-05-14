@@ -53,7 +53,7 @@ const allowedOrigins = Array.from(new Set([...defaultCorsOrigins, ...extraCorsOr
 
 app.use(cors({
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true
 }));
 
@@ -83,6 +83,9 @@ app.use('/api/perfil', perfilRoutes);
 app.use('/api/banco-profesionales', bancoProfesionalesRoutes);
 app.use('/api/paypal', paypalRoutes);
 app.use('/api/tutoriales', tutorialRoutes);
+app.use('/api/notificaciones', notificacionesRoutes);
+app.use('/api/paquetes-suscripcion',paqueteSuscripcionRoutes);
+app.use('/api/publicidad', publicidadRoutes);
 
 /** Smoke test mínimo */
 app.get('/api/', (_req: Request, res: Response) => {
