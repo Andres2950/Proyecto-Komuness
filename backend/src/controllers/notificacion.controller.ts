@@ -1,10 +1,16 @@
-import { Request, Response} from "express";
+import { Request, Response } from "express";
 import { modelNotificacion } from "../models/notificacion.model";
 
-//En caso de que se le quiera agregar una fecha "automática" para que caduquen
-const today = new Date();
+const DEFAULT_CADUCIDAD_DIAS = 3;
+
 function agregarDias(fecha: Date, dias: number): Date {
-  return new Date(today.getTime() + dias * 24 * 60 * 60 * 1000);
+  return new Date(fecha.getTime() + dias * 24 * 60 * 60 * 1000);
+}
+
+function parseFecha(value?: unknown): Date | null {
+  if (!value) return null;
+  const fecha = new Date(String(value));
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
 }
 
 /**
@@ -12,11 +18,14 @@ function agregarDias(fecha: Date, dias: number): Date {
  * @route GET /api/notificacion
  * Para filtro, usar userId, api/notificaciones?userId=...
  */
-
 export const getNotificaciones = async (req: Request, res: Response): Promise<void> => {
   try {
-
     const { userId } = req.query;
+
+    const ahora = new Date();
+    await modelNotificacion.deleteMany({
+      fechaCaducidad: { $exists: true, $ne: null, $lte: ahora }
+    });
 
     let filtro: any = {};
     if (userId) {
@@ -24,14 +33,12 @@ export const getNotificaciones = async (req: Request, res: Response): Promise<vo
     }
     const notificaciones = await modelNotificacion.find(filtro);
 
-    if(notificaciones.length === 0){
+    if (notificaciones.length === 0) {
       res.status(200).json({ data: notificaciones, message: "Este usuario no posee notificaciones" });
       return;
     }
 
     res.status(200).json({ data: notificaciones, message: "Notificaciones obtenidas correctamente" });
-
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al obtener las notificaciones para el usuario" });
@@ -42,10 +49,9 @@ export const getNotificaciones = async (req: Request, res: Response): Promise<vo
  * Crear una nueva notificación
  * @route POST /api/notificacion/
  */
-
 export const createNotificacion = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nombre, descripcion, fechaCaducidad} = req.body;
+    const { nombre, descripcion, fechaCaducidad } = req.body;
 
     if (!nombre?.trim()) {
       res.status(400).json({ message: "El nombre de la notificación es obligatorio" });
@@ -55,17 +61,23 @@ export const createNotificacion = async (req: Request, res: Response): Promise<v
       res.status(400).json({ message: "La descripción de la notificación es obligatoria" });
       return;
     }
-    
+
+    const fechaCaducidadParsed = parseFecha(fechaCaducidad);
+    if (fechaCaducidad && !fechaCaducidadParsed) {
+      res.status(400).json({ message: "La fecha de caducidad no es valida" });
+      return;
+    }
+
+    const fechaFinal = fechaCaducidadParsed ?? agregarDias(new Date(), DEFAULT_CADUCIDAD_DIAS);
 
     const nuevaNotificacion = new modelNotificacion({
       nombre: nombre.trim(),
       descripcion: descripcion.trim(),
-      fechaCaducidad: fechaCaducidad
+      fechaCaducidad: fechaFinal
     });
 
     const saved = await nuevaNotificacion.save();
     res.status(201).json(saved);
-
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: "Error al crear la notificación" });
@@ -76,7 +88,6 @@ export const createNotificacion = async (req: Request, res: Response): Promise<v
  * Crear una nueva notificación
  * @route DELETE /api/notificacion/:id
  */
-
 export const deleteNotificacion = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -89,7 +100,6 @@ export const deleteNotificacion = async (req: Request, res: Response): Promise<v
     }
 
     res.status(200).json({ message: "Notificación eliminada correctamente" });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al eliminar la notificación" });
@@ -100,11 +110,10 @@ export const deleteNotificacion = async (req: Request, res: Response): Promise<v
  * Crear una nueva notificación
  * @route PUT /api/notificacion/:id
  */
-
 export const updateNotificacion = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, fechaCaducidad, vistoPor} = req.body;
+    const { nombre, descripcion, fechaCaducidad, vistoPor } = req.body;
 
     if (!nombre?.trim()) {
       res.status(400).json({ message: "El nombre de la notificación es obligatorio" });
@@ -114,31 +123,29 @@ export const updateNotificacion = async (req: Request, res: Response): Promise<v
       res.status(400).json({ message: "La descripción de la notificación es obligatoria" });
       return;
     }
-    
-    const data : any = {};
 
-    //Revisa si los datos fueron enviados o vienen "vacíos"
+    const data: any = {};
+
+    // Revisa si los datos fueron enviados o vienen "vacíos"
     if (nombre !== undefined) data.nombre = nombre?.trim();
     if (descripcion !== undefined) data.descripcion = descripcion?.trim();
     if (fechaCaducidad !== undefined) data.fechaCaducidad = fechaCaducidad;
     if (vistoPor) data.$addToSet = { vistoPor };
 
     const notificacionActualizada = await modelNotificacion.findByIdAndUpdate(
-      id, 
+      id,
       data,
       { new: true }
     );
- 
+
     if (!notificacionActualizada) {
       res.status(404).json({ message: "Notificación no encontrado" });
       return;
     }
- 
-    res.status(200).json({data: notificacionActualizada, message: "La notificación se actualizó correctamente" });
 
+    res.status(200).json({ data: notificacionActualizada, message: "La notificación se actualizó correctamente" });
   } catch (error: any) {
     console.error(error);
- 
     res.status(500).json({ message: "Error al actualizar la notificación" });
   }
 };
@@ -148,30 +155,27 @@ export const updateNotificacion = async (req: Request, res: Response): Promise<v
  * @route PUT /api/notificacion/:id/visto
  * body={vistoPor: userId}
  */
-
 export const notificacionSeenBy = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const {vistoPor} = req.body;
+    const { vistoPor } = req.body;
 
     const notificacionActualizada = await modelNotificacion.findByIdAndUpdate(
-      id, 
+      id,
       {
-        $addToSet: { vistoPor: vistoPor}
+        $addToSet: { vistoPor: vistoPor }
       },
       { new: true }
     );
- 
+
     if (!notificacionActualizada) {
       res.status(404).json({ message: "Notificación no encontrado" });
       return;
     }
- 
-    res.status(200).json({ data: notificacionActualizada, message: "La notificación fue vista por el usuario"});
 
+    res.status(200).json({ data: notificacionActualizada, message: "La notificación fue vista por el usuario" });
   } catch (error: any) {
     console.error(error);
- 
     res.status(500).json({ message: "Error al actualizar la notificación" });
   }
 };
