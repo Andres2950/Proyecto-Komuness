@@ -8,19 +8,20 @@ import {
 } from "../controllers/notificacion.controller";
 
 import { authMiddleware } from "../middlewares/auth.middleware";
+import { verificarRoles } from "../middlewares/roles.middleware";
 
 const router = Router();
 
 // Obtener notificaciones con o sin filtro
-//Filtro se vería algo como notificaciones?userId=...
+// Filtro se vería algo como notificaciones?userId=...
 router.get("/", getNotificaciones);
 
-// Crud
-router.post("/", authMiddleware, createNotificacion);
-router.delete("/:id", authMiddleware, deleteNotificacion);
-router.put("/:id", authMiddleware, updateNotificacion);
+// Crud (solo admin/super-admin)
+router.post("/", authMiddleware, verificarRoles([0, 1]), createNotificacion);
+router.delete("/:id", authMiddleware, verificarRoles([0, 1]), deleteNotificacion);
+router.put("/:id", authMiddleware, verificarRoles([0, 1]), updateNotificacion);
 
-//Un usuario vio la notificación
+// Un usuario vio la notificación
 router.patch("/:id/visto", authMiddleware, notificacionSeenBy);
 
 export default router;
