@@ -16,6 +16,7 @@ export const CrearUsuario = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,6 +34,11 @@ export const CrearUsuario = () => {
 
     if (password !== confirmarContraseña) {
       toast.error("Las contraseñas no coinciden");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      toast.error("Debes aceptar los términos y condiciones");
       return;
     }
 
@@ -155,9 +161,25 @@ export const CrearUsuario = () => {
               </button>
             </div>
           </div>
+          <div className="flex items-start gap-3 text-xs sm:text-sm">
+            <input
+              id="acepta-terminos"
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-[#ffbf30]"
+            />
+            <label htmlFor="acepta-terminos" className="text-[#f0f0f0]">
+              Acepto los{" "}
+              <a href="/terminos-y-condiciones" className="text-[#ffbf30] font-medium">
+                Términos y Condiciones
+              </a>
+            </label>
+          </div>
           <button
             type="submit"
-            className="w-full bg-[#ffbf30] text-[#12141a] font-bold rounded-xl py-2.5 sm:py-3 text-base sm:text-lg"
+            disabled={!acceptedTerms}
+            className="w-full bg-[#ffbf30] text-[#12141a] font-bold rounded-xl py-2.5 sm:py-3 text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Registrarse
           </button>
