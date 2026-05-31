@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 import { modelNotificacion } from "../models/notificacion.model";
+import { modelCategoria } from "../models/categoria.model"
+import { modelCategoriaPreferencia } from "../models/categoriaPreferencia.model"
+import { IPublicacionNotification } from "../interfaces/publicacion.interface"
+
 
 type CreateNotificacionInput = {
   nombre: string;
@@ -128,3 +132,34 @@ export async function createRespuestaComentarioNotificacion(
       `${autorSeguro} respondió tu comentario en "${tituloSeguro}"`,
   });
 }
+
+export const obtenerUsuariosPorCategoria = async (
+  categoriaId: string
+) => {
+  const usuarios = await modelCategoriaPreferencia
+    .find({ categoriaId })
+    .select("usuarioId -_id");
+
+  return usuarios.map(u => u.usuarioId);
+};
+
+export const notificarNuevaPublicacion = async (
+  publicacion: IPublicacionNotification
+) => {
+
+  const seguidores = await obtenerUsuariosPorCategoria(publicacion.categoriaId.toString());
+
+  const categoria = await modelCategoria.findById(
+    publicacion.categoriaId
+  ).select("nombre");
+
+  await modelNotificacion.create({
+    nombre: `Nueva publicación (${categoria?.nombre})`,
+    descripcion: publicacion.contenidoBreve,
+    //descripcion: `Realizada por: ${
+    //  publicacion.autor?.trim() || "Un usuario"
+    //}`,
+    recipientes: seguidores,
+    publicacionId: publicacion.publicacionId
+  });
+};

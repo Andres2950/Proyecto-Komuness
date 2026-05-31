@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { modelCategoriaPreferencia } from "../models/categoriaPreferencia.model"; 
-
+import { obtenerUsuariosPorCategoria } from "../services/notificacion.service"
 
 /**
  * Crear una preferencia para un usuario específico
@@ -87,9 +87,7 @@ export const getUsuariosByCategoria = async (req: Request, res: Response): Promi
   try {
     const { categoriaId } = req.params;
 
-    const usuarios = await modelCategoriaPreferencia
-      .find({ categoriaId })
-      .select("usuarioId -_id");
+    const usuarios = await obtenerUsuariosPorCategoria(categoriaId);
 
     res.status(200).json({
       total: usuarios.length,

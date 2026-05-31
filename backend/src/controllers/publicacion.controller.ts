@@ -1,7 +1,7 @@
 // src/controllers/publicacion.controller.ts
 
 import { Request, Response } from 'express';
-import { IAdjunto, IComentario, IEnlaceExterno, IPublicacion, IUbicacion } from '../interfaces/publicacion.interface';
+import { IPublicacionNotification, IAdjunto, IComentario, IEnlaceExterno, IPublicacion, IUbicacion } from '../interfaces/publicacion.interface';
 import { modelPublicacion } from '../models/publicacion.model';
 import mongoose from 'mongoose';
 import { saveMulterFileToGridFS, saveBufferToGridFS, deleteGridFSFile } from '../utils/gridfs';
@@ -12,6 +12,7 @@ import { modelPerfil } from '../models/perfil.model';
 import {
   createComentarioPublicacionNotificacion,
   createRespuestaComentarioNotificacion,
+  notificarNuevaPublicacion,
 } from '../services/notificacion.service';
 
 const LOG_ON = process.env.LOG_PUBLICACION === '1';
@@ -315,6 +316,12 @@ export const createPublicacion = async (req: Request, res: Response): Promise<vo
 export const createPublicacionA = async (req: Request, res: Response): Promise<void> => {
   try {
     const publicacion = req.body as IPublicacion & Record<string, any>;
+    const user = req.user;
+
+    if (!user) {
+      res.status(401).json({ message: "No autorizado" });
+      return;
+    }
 
     // 🔴 Autor siempre desde el token
     const userId = (req as any).user?._id;
@@ -416,6 +423,19 @@ export const createPublicacionA = async (req: Request, res: Response): Promise<v
 
 
     const savePost = await nuevaPublicacion.save();
+
+    //Notificación a usuarios suscritos a categoría
+    const nombreAutor = [user.nombre, user.apellido,].filter(Boolean).join(" ").trim();
+    try {
+      await notificarNuevaPublicacion({
+        autor: "",
+        contenidoBreve: publicacion.contenidoBreve,
+        publicacionId: savePost._id,
+        categoriaId: categoria
+      });
+    } catch (notificacionError) {
+      console.warn('No se pudo crear notificación de publicación', notificacionError);
+    }
 
     // Notificación por correo a admins (aprobación)
     try {
