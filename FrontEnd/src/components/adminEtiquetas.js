@@ -8,32 +8,7 @@ import "../CSS/adminCategorias.css"; // Importamos el CSS separado
 import { IoMdArrowRoundBack } from "react-icons/io";
 
 export const AdminCategorias = () => {
-  const TYPES = {
-    categoria: {
-      label: "Categoría",
-      plural: "Categorías",
-    },
-    etiqueta: {
-      label: "Etiqueta",
-      plural: "Etiquetas",
-    },
-  };
-
-  const [optionActive, setOptionActive] = useState("categoria");
-  const currentType = TYPES[optionActive];
-
-  const setOption = (option) => {
-    setEditingId(null);
-    setFormData({ nombre: "" });
-    setOptionActive(option);
-  };
-
-  useEffect(() => {
-    fetchElements();
-  }, [optionActive]);
-
-  const [elements, setElements] = useState([]);
-
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -53,22 +28,24 @@ export const AdminCategorias = () => {
         navigate("/");
         return;
       }
+
+      fetchCategorias();
     };
 
     checkPermissions();
   }, [user, navigate]);
 
-  const fetchElements = async () => {
+  const fetchCategorias = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/elements/${optionActive}`);
-      if (!response.ok) throw new Error("Error al cargar " + optionActive);
+      const response = await fetch(`${API_URL}/elements/categoria`);
+      if (!response.ok) throw new Error("Error al cargar categorías");
 
       const data = await response.json();
-      setElements(data.data || []);
+      setCategorias(data.data || []);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Error al cargar " + optionActive);
+      toast.error("Error al cargar categorías");
     } finally {
       setLoading(false);
     }
@@ -79,17 +56,15 @@ export const AdminCategorias = () => {
     setActionLoading(true);
 
     if (!formData.nombre.trim()) {
-      toast.error(
-        `El nombre de la ${currentType.label.toLowerCase()} es obligatorio`,
-      );
+      toast.error("El nombre de la categoría es obligatorio");
       setActionLoading(false);
       return;
     }
 
     try {
       const url = editingId
-        ? `${API_URL}/elements/${optionActive}/${editingId}`
-        : `${API_URL}/elements/${optionActive}`;
+        ? `${API_URL}/elements/categoria/${editingId}`
+        : `${API_URL}/elements/categoria`;
 
       const method = editingId ? "PUT" : "POST";
 
@@ -103,22 +78,16 @@ export const AdminCategorias = () => {
       });
 
       if (response.ok) {
-        toast.success(
-          editingId
-            ? `${currentType.label} actualizada`
-            : `${currentType.label} creada`,
-        );
+        toast.success(editingId ? "Categoría actualizada" : "Categoría creada");
         setFormData({ nombre: "" });
         setEditingId(null);
-        fetchElements();
+        fetchCategorias();
       } else {
         const errorData = await response.json();
-        toast.error(
-          errorData.message || "Error al guardar las " + optionActive,
-        );
+        toast.error(errorData.message || "Error al guardar la categoría");
       }
     } catch (error) {
-      toast.error("Error al guardar las " + optionActive);
+      toast.error("Error al guardar la categoría");
     } finally {
       setActionLoading(false);
     }
@@ -126,42 +95,34 @@ export const AdminCategorias = () => {
 
   const handleDelete = async (id) => {
     if (
-      !window.confirm(
-        `¿Estás seguro de que quieres eliminar esta ${currentType.label.toLowerCase()}?`,
-      )
+      !window.confirm("¿Estás seguro de que quieres eliminar esta categoría?")
     ) {
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/elements/${optionActive}/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+      const response = await fetch(`${API_URL}/elements/categoria/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-      );
+      });
 
       if (response.ok) {
-        toast.success(`${currentType.label} eliminada`);
-        fetchElements();
+        toast.success("Categoría eliminada");
+        fetchCategorias();
       } else {
         const errorData = await response.json();
-        toast.error(
-          errorData.message ||
-            `Error al eliminar la ${currentType.label.toLowerCase()}`,
-        );
+        toast.error(errorData.message || "Error al eliminar la categoría");
       }
     } catch (error) {
-      toast.error(`Error al eliminar la ${currentType.label.toLowerCase()}`);
+      toast.error("Error al eliminar la categoría");
     }
   };
   const handleToggle = async (id) => {
     try {
       const response = await fetch(
-        `${API_URL}/elements/${optionActive}/toggle/${id}`,
+        `${API_URL}/elements/categoria/toggle/${id}`,
         {
           method: "PUT",
           headers: {
@@ -172,7 +133,7 @@ export const AdminCategorias = () => {
 
       if (response.ok) {
         toast.success("Estado actualizado");
-        fetchElements();
+        fetchCategorias();
       } else {
         toast.error("Error al actualizar estado");
       }
@@ -188,9 +149,7 @@ export const AdminCategorias = () => {
   if (loading) {
     return (
       <div className="admin-categorias-loading">
-        <div className="text-white">
-          {`Cargando ${currentType.label.toLowerCase()}...`}
-        </div>
+        <div className="text-white">Cargando categorías...</div>
       </div>
     );
   }
@@ -203,37 +162,14 @@ export const AdminCategorias = () => {
             <IoMdArrowRoundBack color={"black"} size={25} />
           </button>
           <h1 className="admin-categorias-title">
-            Administración de Categorías y Etiquetas
+            Administración de Categorías
           </h1>
-        </div>
-
-        {/*opciones*/}
-        <div className="admin-categorias-options">
-          <button
-            onClick={() => setOption("categoria")}
-            className={`admin-categorias-option-btn ${
-              optionActive === "categoria" ? "active" : ""
-            }`}
-          >
-            Categorías
-          </button>
-
-          <button
-            onClick={() => setOption("etiqueta")}
-            className={`admin-categorias-option-btn ${
-              optionActive === "etiqueta" ? "active" : ""
-            }`}
-          >
-            Etiquetas
-          </button>
         </div>
 
         {/* Formulario */}
         <div className="admin-categorias-form-container">
           <h2 className="admin-categorias-subtitle">
-            {editingId
-              ? `Editar ${currentType.label}`
-              : `Crear Nueva ${currentType.label}`}
+            {editingId ? "Editar Categoría" : "Crear Nueva Categoría"}
           </h2>
 
           <form onSubmit={handleSubmit} className="admin-categorias-form">
@@ -241,7 +177,7 @@ export const AdminCategorias = () => {
               type="text"
               value={formData.nombre}
               onChange={(e) => setFormData({ nombre: e.target.value })}
-              placeholder={`Nombre de la ${currentType.label.toLowerCase()}`}
+              placeholder="Nombre de la categoría"
               className="admin-categorias-input"
               required
               disabled={actionLoading}
@@ -287,37 +223,37 @@ export const AdminCategorias = () => {
                 </tr>
               </thead>
               <tbody>
-                {elements.map((element, index) => (
+                {categorias.map((categoria, index) => (
                   <tr
-                    key={element._id}
+                    key={categoria._id}
                     className={`admin-categorias-tr ${index % 2 === 0 ? "admin-categorias-tr-even" : "admin-categorias-tr-odd"}`}
                   >
                     <td className="admin-categorias-td admin-categorias-td-name">
-                      {element.nombre.toUpperCase()}
+                      {categoria.nombre.toUpperCase()}
                     </td>
                     <td className="admin-categorias-td">
                       <span
-                        className={`admin-categorias-status ${element.estado ? "admin-categorias-status-active" : "admin-categorias-status-inactive"}`}
+                        className={`admin-categorias-status ${categoria.estado ? "admin-categorias-status-active" : "admin-categorias-status-inactive"}`}
                       >
-                        {element.estado ? "Activa" : "Inactiva"}
+                        {categoria.estado ? "Activa" : "Inactiva"}
                       </span>
                     </td>
                     <td className="admin-categorias-td">
                       <div className="admin-categorias-actions">
                         <button
                           onClick={() => {
-                            setFormData({ nombre: element.nombre });
-                            setEditingId(element._id);
+                            setFormData({ nombre: categoria.nombre });
+                            setEditingId(categoria._id);
                           }}
                           className="admin-categorias-edit-btn"
                         >
                           Editar
                         </button>
                         <button
-                          onClick={() => handleToggle(element._id)}
+                          onClick={() => handleToggle(categoria._id)}
                           className="admin-categorias-delete-btn"
                         >
-                          {element.estado ? "Desactivar" : "Activar"}
+                          {categoria.estado ? "Desactivar" : "Activar"}
                         </button>
                       </div>
                     </td>
@@ -327,9 +263,9 @@ export const AdminCategorias = () => {
             </table>
           </div>
 
-          {elements.length === 0 && (
+          {categorias.length === 0 && (
             <div className="admin-categorias-empty">
-              No hay elementos registrados
+              No hay categorías registradas
             </div>
           )}
         </div>
