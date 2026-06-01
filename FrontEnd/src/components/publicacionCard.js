@@ -173,7 +173,7 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
         onClose={() => setShowProfileError(false)}
         type={errorType}
       />
-      <div className="card bg-white rounded-lg overflow-hidden shadow-lg flex flex-col h-full">
+      <div className="card rounded-lg overflow-hidden shadow-lg flex flex-col h-full">
         <div className="relative flex-grow" onClick={handleClick}>
           {/* Badge de categoría - MÁS PEQUEÑO EN MÓVIL */}
           <div className="absolute top-2 right-2 z-10">
@@ -218,7 +218,7 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
 
           {/* Espacio de imagen para publicaciones de tipo 'publicacion' */}
           {esPublicacion && (
-            <div className="imagen h-48 bg-blue-900 flex items-center justify-center">
+            <div className="imagen h-48 flex items-center justify-center">
               {tieneImagenes ? (
                 <img
                   src={publicacion.adjunto[0]?.url}
@@ -243,13 +243,13 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
               <div className="card-details">
                 <h3 className="titulo">{publicacion.titulo}</h3>
                 <div className="tweet-content mb-2">
-                  <p className="text-white">{publicacion.contenidoBreve}</p>
+                  <p className="theme-card-text">{publicacion.contenidoBreve}</p>
                 </div>
                 <hr className="my-3 w-full border-gray-300" />
                 <p className="fecha">
                   Creador por:{" "}
                   <span
-                    className="text-white hover:text-blue-100 cursor-pointer hover:underline"
+                    className="theme-card-author-link cursor-pointer hover:underline"
                     onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
                   >
                     {publicacion.autor?.nombre || "Desconocido"}
@@ -264,13 +264,13 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
               <div className="card-details">
                 <h3 className="titulo">{publicacion.titulo}</h3>     
 		            <div className="tweet-content mb-2">
-                  <p className="text-white">{publicacion.contenidoBreve}</p>
+                  <p className="theme-card-text">{publicacion.contenidoBreve}</p>
                 </div>
                 <hr className="my-3 w-full border-gray-300" />
 		            <p className="fecha">
                   Publicado por:{" "}
                   <span
-                    className="text-white hover:text-blue-100 cursor-pointer hover:underline"
+                    className="theme-card-author-link cursor-pointer hover:underline"
                     onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
                   >
                     {publicacion.autor?.nombre || "Desconocido"}
@@ -289,25 +289,25 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
                   <div className="tweet-header mb-2">
                   <div className="tweet-title">
                       <h4
-                        className="title font-semibold text-white"
+                        className="title font-semibold"
 		      >
                           {publicacion.titulo || "Sin título"}
                       </h4>
                       </div>
                   </div>
                   <div className="tweet-content mb-2">
-                      <p className="text-gray-700">{publicacion.contenidoBreve}</p>
+                      <p className="theme-card-text">{publicacion.contenidoBreve}</p>
                   </div>
 		  <div className="tweet-footer mt-2">
                     <div className="tweet-user">
                       <h4
-                        className="user-name text-white hover:text-blue-100 cursor-pointer hover:underline"
+                        className="user-name theme-card-author-link cursor-pointer hover:underline"
                         onClick={(e) => handleProfileClick(e, publicacion.autor?._id)}
                       >
                           Publicado por: <b>{publicacion.autor?.nombre || "Desconocido"} </b>
                       </h4>
                     </div>
-                    <p className="tweet-date text-sm text-gray-600">
+                    <p className="tweet-date text-sm">
                      Fecha: {formatFecha(publicacion.fecha)}
                     </p>
                   </div>      
