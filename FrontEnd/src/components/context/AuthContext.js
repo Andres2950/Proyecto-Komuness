@@ -60,5 +60,7 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  const token = localStorage.getItem('token');
+  return { ...context, token };
 }

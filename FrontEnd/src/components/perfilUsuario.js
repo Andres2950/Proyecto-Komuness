@@ -8,7 +8,7 @@ import { useAuth } from "./context/AuthContext";
 import ModalCambioContrasena from "./modalCambioContra";
 import { Link } from "react-router-dom";
 import { FaListAlt, FaEdit, FaHistory } from "react-icons/fa";
-import { FiSettings, FiCreditCard } from "react-icons/fi";
+import { FiSettings, FiCreditCard, FiMail } from "react-icons/fi";
 import ModalLimitesPublicaciones from "./modalLimitesPublicaciones";
 import ModalConfiguracionPagos from "./ModalConfiguracionPagos";
 import AlertaLimitePublicaciones from "./AlertaLimitePublicaciones";
@@ -1199,6 +1199,14 @@ export const PerfilUsuario = () => {
               >
                 <FaListAlt className="w-4 h-4 mr-2" />
                 Gestionar Clasificaciones
+              </Link>
+
+              <Link
+                to="/admin/boletines"
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium text-sm"
+              >
+                <FiMail className="w-4 h-4 mr-2" />
+                Gestionar Boletines
               </Link>
 
               <button
