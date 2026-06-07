@@ -2,8 +2,8 @@
 import { useRef, useEffect, useState } from "react";
 import { FaHeart, FaStar } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import { API_URL } from "../utils/api";
-import { useAuth } from './context/AuthContext';
+import { API_URL } from "../../utils/api";
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
 export const CategoriaFilter = () => {
@@ -24,7 +24,7 @@ export const CategoriaFilter = () => {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const response = await fetch(`${API_URL}/categorias`);
+        const response = await fetch(`${API_URL}/elements/categoria`);
         const data = await response.json();
         setCategorias(data.data || []);
       } catch (error) {
@@ -142,7 +142,9 @@ export const CategoriaFilter = () => {
 
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <label className="hidden sm:inline text-yellow-400 font-bold text-sm whitespace-nowrap">Categorías</label>
+      <label className="hidden sm:inline text-yellow-400 font-bold text-sm whitespace-nowrap">
+        Categorías
+      </label>
       <select
         value={selectedCategoria}
         onChange={handleCategoriaChange}

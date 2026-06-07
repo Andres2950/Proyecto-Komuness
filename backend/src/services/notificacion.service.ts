@@ -153,12 +153,14 @@ export const notificarNuevaPublicacion = async (
     publicacion.categoriaId
   ).select("nombre");
 
+  if (seguidores.length === 0) {
+    console.log(`No hay usuarios suscritos a la categoría ${publicacion.categoriaId}`);
+    return;
+  }
+
   await modelNotificacion.create({
     nombre: `Nueva publicación (${categoria?.nombre})`,
-    descripcion: publicacion.contenidoBreve,
-    //descripcion: `Realizada por: ${
-    //  publicacion.autor?.trim() || "Un usuario"
-    //}`,
+    descripcion: `${publicacion.contenidoBreve} - ${publicacion.autor}`,
     recipientes: seguidores,
     publicacionId: publicacion.publicacionId
   });
