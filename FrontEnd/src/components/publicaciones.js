@@ -17,6 +17,7 @@ import AlertaLimitePublicaciones from "./AlertaLimitePublicaciones";
 import { API_URL } from "../utils/api";
 import LimitePublicaciones from "./limiteDePublicaciones";
 import PublicidadModal from "./publicidadModal";
+import DateFilter from "./generic/dateFilter";
 
 // Base de API robusta (evita /api/api)
 const RAW = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -42,6 +43,7 @@ export const Publicaciones = ({ tag: propTag }) => {
 
   const categoriaFilter = searchParams.get("categoria");
   const searchTerm = searchParams.get("q");
+  const fechaFilter = searchParams.get("fecha");
   const isSearch = searchParams.get("search") === "true";
   const searchFilter = isSearch ? searchTerm : null;
   const [limiteData, setLimiteData] = useState(null);
@@ -104,8 +106,15 @@ export const Publicaciones = ({ tag: propTag }) => {
 
   useEffect(() => {
     if (tag)
-      obtenerPublicaciones(tag, 1, limite, categoriaFilter, searchFilter);
-  }, [tag, categoriaFilter, searchFilter]);
+      obtenerPublicaciones(
+        tag,
+        1,
+        limite,
+        categoriaFilter,
+        searchFilter,
+        fechaFilter,
+      );
+  }, [tag, categoriaFilter, searchFilter, fechaFilter]);
 
   useEffect(() => {
     if (mostrar === 3) {
@@ -126,6 +135,7 @@ export const Publicaciones = ({ tag: propTag }) => {
     limit = limite,
     categoriaId = null,
     searchTerm = null,
+    fecha = null,
   ) => {
     try {
       const offset = (page - 1) * limit;
@@ -151,7 +161,14 @@ export const Publicaciones = ({ tag: propTag }) => {
           limit: String(limit),
           publicado: "true",
         });
-        if (categoriaId) params.set("categoria", categoriaId);
+
+        if (categoriaId) {
+          params.set("categoria", categoriaId);
+        }
+
+        if (fecha) {
+          params.set("fecha", fecha);
+        }
       }
 
       const resp = await fetch(`${url}?${params.toString()}`);
@@ -307,11 +324,6 @@ export const Publicaciones = ({ tag: propTag }) => {
     }
   };
 
-  const mostrarBotonVolver = () => {
-    const path = location.pathname;
-    return path === "/eventos" || path === "/emprendimientos";
-  };
-
   const handlePagination = (newPage) => {
     obtenerPublicaciones(tag, newPage, limite, categoriaFilter, searchFilter);
   };
@@ -420,6 +432,9 @@ export const Publicaciones = ({ tag: propTag }) => {
 
               {/* Filtro de categorías */}
               <CategoriaFilter />
+
+              {/* Filtro de fecha de evento/publicación */}
+              <DateFilter />
             </div>
 
             {limiteData && tag === "publicacion" && !esAdmin && (
