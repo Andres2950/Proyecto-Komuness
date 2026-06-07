@@ -444,7 +444,7 @@ export const Publicaciones = ({ tag: propTag }) => {
               <DateFilter />
 
               {/* Filtro para precio regular */}
-              <PriceFilter />
+              {tag !== "publicacion" && <PriceFilter />}
             </div>
 
             {limiteData && tag === "publicacion" && !esAdmin && (
