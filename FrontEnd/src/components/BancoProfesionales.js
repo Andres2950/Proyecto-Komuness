@@ -53,7 +53,6 @@ const BancoProfesionales = () => {
       
       const data = await response.json();
       setProfesionales(data);
-
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar los profesionales');
@@ -64,6 +63,7 @@ const BancoProfesionales = () => {
 
   // Cargar usuarios
   const cargarUsuarios = useCallback(async (search = '') => {
+    if(!user) return;
     try {
       setLoading(true);
 
@@ -341,7 +341,10 @@ const quitarDelBanco = async (perfilId) => {
           </button>
 
           <button
-            onClick={() => setActiveTab("usuarios")}
+            onClick={() => {
+              if (!user) navigate('/iniciarSesion');;
+              setActiveTab("usuarios")}
+            }
             className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-0 ${
             activeTab === "usuarios"
               ? "bg-gray-200 text-blue-600 shadow-inner"
@@ -448,7 +451,7 @@ const quitarDelBanco = async (perfilId) => {
               <div className="card-actions">
                 <button
                   onClick={() =>
-                    navigate(`/perfil/${item.perfilId}`)
+                    navigate(`/perfil/${item.usuarioId._id}`)
                   }
                   className="btn-ver-perfil"
                 >
@@ -498,9 +501,6 @@ const quitarDelBanco = async (perfilId) => {
                     <th className="text-left px-3 py-2 min-w-[120px]">
                       Apellidos
                     </th>
-                    <th className="text-left px-3 py-2 min-w-[120px]">
-                      Email
-                    </th>
                   </tr>
                 </thead>
 
@@ -516,10 +516,6 @@ const quitarDelBanco = async (perfilId) => {
 
                       <td className="px-3 py-2 break-words min-w-[120px]">
                         {item.apellido || "Sin apellido"}
-                      </td>
-
-                      <td className="px-3 py-2 break-words min-w-[120px]">
-                        {item.email}
                       </td>
                     </tr>
                   ))}
