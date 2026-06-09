@@ -9,6 +9,8 @@ type CreateNotificacionInput = {
   recipientes?: string[];
   publicacionId?: string;
   fechaCaducidad?: Date | null;
+  tipo?: "general" | "formulario";
+  formularioUrl?: string | null;
 };
 
 type CreateComentarioPublicacionNotificacionInput = {
@@ -34,6 +36,8 @@ export async function createNotificacion( input: CreateNotificacionInput ) {
     recipientes,
     publicacionId,
     fechaCaducidad = null,
+    tipo = "general",
+    formularioUrl = null,
   } = input;
 
   // Compatibilidad
@@ -58,6 +62,8 @@ export async function createNotificacion( input: CreateNotificacionInput ) {
     recipientes: recipientesFinales,
     publicacionId: publicacionId || null,
     fechaCaducidad,
+    tipo,
+    formularioUrl,
   });
 
   return nuevaNotificacion.save();
