@@ -40,6 +40,47 @@ export const upload = multer({
   },
 });
 
+const themeStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const isProd = process.env.NODE_ENV === 'production';
+    const baseUploadsDir = process.env.UPLOAD_DIR || (isProd
+      ? '/srv/uploads'
+      : path.join(__dirname, '../tmp/uploads'));
+    const folder = path.join(baseUploadsDir, 'tematica');
+
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder, { recursive: true });
+    }
+
+    cb(null, folder);
+  },
+  filename: (_req, file, cb) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
+    cb(null, uniqueName);
+  }
+});
+
+const themeImageFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
+  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+    return;
+  }
+
+  cb(new Error('Tipo de archivo no permitido. Solo se permiten imágenes JPG, PNG, WEBP o GIF.'));
+};
+
+export const uploadThemeBackground = multer({
+  storage: themeStorage,
+  fileFilter: themeImageFilter,
+  limits: {
+    fileSize: 8 * 1024 * 1024,
+    files: 1,
+  },
+});
+
 // Storage específico para perfiles de usuario
 const perfilStorage = multer.diskStorage({
   destination: (req, file, cb) => {

@@ -10,6 +10,7 @@
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
     "bcryptjs": "^3.0.2",
+    "core-js": "^3.49.0",
     "date-fns": "^4.1.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.14.0",
@@ -53,5 +54,9 @@
   },
   "devDependencies": {
     "tailwindcss": "^3.4.17"
+  },
+  "allowScripts": {
+    "core-js@3.49.0": true,
+    "core-js-pure@3.49.0": true
   }
 }
