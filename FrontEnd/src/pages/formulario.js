@@ -8,12 +8,17 @@ import '../CSS/formularioPublicacion.css';
 import MapaUbicacion from '../components/MapaUbicacion';
 import TextAreaComponent from '../components/TextAreaComponent';
 import ConfirmDialog from "../components/ConfirmDialog";
+import CategoriaSelector from "../components/generic/categoriaSelector";
+import AlertaLimitePublicaciones from "../components/AlertaLimitePublicaciones";
+import "../CSS/formularioPublicacion.css";
+import MapaUbicacion from "../components/MapaUbicacion";
+import TextAreaComponent from "../components/TextAreaComponent";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { useConfirmDialog } from "../hooks/useConfirmDialog";
 import {
   readSessionDraft,
   removeSessionDraft,
-  writeSessionDraft
+  writeSessionDraft,
 } from "../utils/sessionDraftStorage";
 
 const CREATE_DRAFT_PREFIX = "komuness:crear-publicacion";
@@ -22,12 +27,13 @@ const DEFAULT_UBICACION = {
   latitude: 9.7489,
   longitude: -83.7534,
   direccion: "San José, Costa Rica",
-  mapLink: 'https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534'
+  mapLink:
+    "https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534",
 };
 
 const createDefaultUbicacion = () => ({ ...DEFAULT_UBICACION });
 
-const createDefaultEnlaces = () => [{ nombre: '', url: '' }];
+const createDefaultEnlaces = () => [{ nombre: "", url: "" }];
 
 const getCreateDraftStorageKey = (tag) =>
   `${CREATE_DRAFT_PREFIX}:${tag || "general"}`;
@@ -85,6 +91,23 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
       const initialFormValues = getInitialFormValues(openTag);
       const savedDraft = readSessionDraft(draftStorageKey);
 
+    if (savedDraft) {
+      setFormData({
+        ...initialFormValues,
+        ...(savedDraft.formData || {}),
+        archivos: [],
+      });
+      setEnlacesExternos(
+        Array.isArray(savedDraft.enlacesExternos) &&
+          savedDraft.enlacesExternos.length > 0
+          ? savedDraft.enlacesExternos
+          : createDefaultEnlaces(),
+      );
+      setUbicacion({
+        ...createDefaultUbicacion(),
+        ...(savedDraft.ubicacion || {}),
+      });
+    } else {
       setFormData(initialFormValues);
       setEnlacesExternos(createDefaultEnlaces());
       setUbicacion(createDefaultUbicacion());
@@ -236,8 +259,8 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
 
     // Filtrar enlaces válidos (con nombre y URL)
   const enlacesValidos = enlacesExternos.filter(
-      enlace => enlace.nombre.trim() !== '' && enlace.url.trim() !== ''
-    );
+    (enlace) => enlace.nombre.trim() !== "" && enlace.url.trim() !== "",
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -258,13 +281,13 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
     data.append("telefono", formData.telefono || "");
     data.append("categoria", formData.categoria || "");
-    
+
     // Agregar ubicación como JSON si es un evento
     if (formData.tag === "evento" && ubicacion) {
       data.append("ubicacion", JSON.stringify(ubicacion));
     }
 
-      // Agregar enlaces externos como JSON
+    // Agregar enlaces externos como JSON
     if (enlacesValidos.length > 0) {
       data.append("enlacesExternos", JSON.stringify(enlacesValidos));
     }
@@ -308,30 +331,35 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     }
 
     if (!response.ok) {
-      const error = new Error(result?.message || result?.mensaje || "Error al enviar publicación.");
+      const error = new Error(
+        result?.message || result?.mensaje || "Error al enviar publicación.",
+      );
       error.status = response.status;
-      
+
       // Si es error 403, lanzarlo sin mostrar toast
       if (response.status === 403) {
         throw error;
       }
-      
+
       // Para otros errores, mostrar toast
       toast.error(error.message);
       throw error;
     }
 
     // Si fue exitoso, mostrar toast de éxito
-    toast.success("Publicación enviada con éxito, solicita a un administrador que la publique 🎉", {
-      duration: 8000,
-    });
-    
+    toast.success(
+      "Publicación enviada con éxito, solicita a un administrador que la publique 🎉",
+      {
+        duration: 8000,
+      },
+    );
+
     return result;
   };
 
   if (!isOpen) return null;
 
-return (
+  return (
     <>
       <div className="formulario-publicacion-container">
         <div className="formulario-publicacion">
@@ -358,7 +386,9 @@ return (
                 className="campo-input"
                 required
               />
-              <p className="texto-contador">{formData.titulo.length}/100 caracteres</p>
+              <p className="texto-contador">
+                {formData.titulo.length}/100 caracteres
+              </p>
             </div>
 
             {/* Tag */}
@@ -381,7 +411,7 @@ return (
             {/* Clasificación */}
             <div className="campo-grupo">
               <label className="campo-label">Clasificación:</label>
-              <CategoriaSelector 
+              <CategoriaSelector
                 selectedCategoria={formData.categoria}
                 onCategoriaChange={handleChange}
                 required={true}
@@ -401,7 +431,7 @@ return (
                 required
               />
             </div>
-	    {/* Descripción corta*/}
+            {/* Descripción corta*/}
             <div className="campo-grupo">
               <label className="campo-label">Descripción breve:</label>
               <TextAreaComponent
@@ -410,14 +440,15 @@ return (
                 onChange={handleChange}
                 className="campo-textarea small"
                 placeholder={`Descripción breve`}
-		limit={100}
+                limit={100}
                 rows={2}
                 required
               />
             </div>
 
             {/* Precios para eventos y emprendimientos */}
-            {(formData.tag === "evento" || formData.tag === "emprendimiento") && (
+            {(formData.tag === "evento" ||
+              formData.tag === "emprendimiento") && (
               <div className="precios-seccion">
                 <h3 className="precios-titulo">Precios</h3>
 
@@ -432,16 +463,20 @@ return (
                         onChange={handlePrecioNegociableChange}
                         className="precio-negociable-checkbox"
                       />
-                      <label htmlFor="precioNegociableCrear" className="precio-negociable-label">
+                      <label
+                        htmlFor="precioNegociableCrear"
+                        className="precio-negociable-label"
+                      >
                         Precio negociable
                       </label>
                     </div>
                     <p className="precio-negociable-help">
-                      Si activas esta opción, no se mostrará un precio fijo en el emprendimiento.
+                      Si activas esta opción, no se mostrará un precio fijo en
+                      el emprendimiento.
                     </p>
                   </div>
                 )}
-                
+
                 {(formData.tag === "evento" || !formData.precioNegociable) && (
                   <>
                     <div className="campo-grupo">
@@ -474,7 +509,9 @@ return (
 
                     {/* Precio Estudiante */}
                     <div className="campo-grupo">
-                      <label className="campo-label">Precio estudiante (opcional):</label>
+                      <label className="campo-label">
+                        Precio estudiante (opcional):
+                      </label>
                       <input
                         type="number"
                         name="precioEstudiante"
@@ -487,7 +524,9 @@ return (
 
                     {/* Precio Ciudadano de Oro */}
                     <div className="campo-grupo">
-                      <label className="campo-label">Precio ciudadano de oro (opcional):</label>
+                      <label className="campo-label">
+                        Precio ciudadano de oro (opcional):
+                      </label>
                       <input
                         type="number"
                         name="precioCiudadanoOro"
@@ -503,9 +542,11 @@ return (
             )}
 
             {/* Teléfono */}
-        
+
             <div className="campo-grupo">
-              <label className="campo-label">Teléfono de contacto (opcional):</label>
+              <label className="campo-label">
+                Teléfono de contacto (opcional):
+              </label>
               <input
                 type="tel"
                 name="telefono"
@@ -523,13 +564,17 @@ return (
                 }}
               />
               {formData.telefono && !/^\d+$/.test(formData.telefono) && (
-                <p className="texto-error">El teléfono debe contener solo números</p>
+                <p className="texto-error">
+                  El teléfono debe contener solo números
+                </p>
               )}
             </div>
 
             {/* Enlaces externos */}
             <div className="enlaces-seccion">
-              <label className="campo-label">Enlaces externos (opcional):</label>
+              <label className="campo-label">
+                Enlaces externos (opcional):
+              </label>
               <p className="texto-ayuda">
                 Puedes agregar: URLs, correos, enlaces de WhatsApp, etc.
               </p>
@@ -539,14 +584,18 @@ return (
                     type="text"
                     placeholder="Ej: Facebook, Correo, WhatsApp"
                     value={enlace.nombre}
-                    onChange={(e) => handleEnlaceChange(index, 'nombre', e.target.value)}
+                    onChange={(e) =>
+                      handleEnlaceChange(index, "nombre", e.target.value)
+                    }
                     className="campo-input enlace-input"
                   />
                   <input
                     type="text"
                     placeholder="https://..., correo@gmail.com,"
                     value={enlace.url}
-                    onChange={(e) => handleEnlaceChange(index, 'url', e.target.value)}
+                    onChange={(e) =>
+                      handleEnlaceChange(index, "url", e.target.value)
+                    }
                     className="campo-input enlace-input"
                   />
                   <button
@@ -635,7 +684,7 @@ return (
                 </div>
 
                 {/* Mapa para seleccionar ubicación del evento */}
-                <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ gridColumn: "1 / -1" }}>
                   <MapaUbicacion
                     onLocationSelect={handleUbicacionChange}
                     initialLocation={ubicacion}
@@ -658,9 +707,9 @@ return (
       </div>
 
       {/* Alerta de límite de publicaciones */}
-      <AlertaLimitePublicaciones 
-        show={mostrarAlerta} 
-        onClose={() => setMostrarAlerta(false)} 
+      <AlertaLimitePublicaciones
+        show={mostrarAlerta}
+        onClose={() => setMostrarAlerta(false)}
       />
 
       <ConfirmDialog
