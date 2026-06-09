@@ -2,17 +2,12 @@ import { useState, useEffect } from "react";
 import { IoMdClose, IoMdRemove, IoMdAdd } from "react-icons/io";
 import { API_URL } from "../utils/api";
 import { toast } from "react-hot-toast";
-import CategoriaSelector from '../components/categoriaSelector';
+import CategoriaSelector from '../components/generic/categoriaSelector';
 import AlertaLimitePublicaciones from '../components/AlertaLimitePublicaciones';
 import '../CSS/formularioPublicacion.css';
 import MapaUbicacion from '../components/MapaUbicacion';
 import TextAreaComponent from '../components/TextAreaComponent';
 import ConfirmDialog from "../components/ConfirmDialog";
-import CategoriaSelector from "../components/generic/categoriaSelector";
-import AlertaLimitePublicaciones from "../components/AlertaLimitePublicaciones";
-import "../CSS/formularioPublicacion.css";
-import MapaUbicacion from "../components/MapaUbicacion";
-import TextAreaComponent from "../components/TextAreaComponent";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { useConfirmDialog } from "../hooks/useConfirmDialog";
 import {
@@ -55,6 +50,7 @@ const getInitialFormValues = (tag) => ({
   precioNegociable: false,
   precioEstudiante: "",
   precioCiudadanoOro: "",
+  descuento: "",
   telefono: "",
   categoria: "",
 });
@@ -266,6 +262,7 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     data.append("precioNegociable", String(formData.precioNegociable));
     data.append("precioEstudiante", formData.precioEstudiante || "");
     data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
+    data.append("descuento", formData.descuento || "0");
     data.append("telefono", formData.telefono || "");
     data.append("categoria", formData.categoria || "");
 
@@ -522,6 +519,28 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
                         className="campo-input"
                         placeholder="Ej: 7000"
                       />
+                    </div>
+
+                    {/* Descuento */}
+                    <div className="campo-grupo">
+                      <label className="campo-label">
+                        Descuento (% - opcional):
+                      </label>
+                      <input
+                        type="number"
+                        name="descuento"
+                        value={formData.descuento}
+                        onChange={handleChange}
+                        className="campo-input"
+                        placeholder="Ej: 15 (para 15%)"
+                        min="0"
+                        max="100"
+                      />
+                      {formData.descuento && (
+                        <p className="texto-ayuda">
+                          Descuento: {formData.descuento}%
+                        </p>
+                      )}
                     </div>
                   </>
                 )}

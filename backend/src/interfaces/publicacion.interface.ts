@@ -19,6 +19,7 @@ export interface IPublicacion {
   precioNegociable?: boolean;
   precioEstudiante?: number;     
   precioCiudadanoOro?: number;   
+  descuento?: number; // Porcentaje de descuento (0-100)
   enlacesExternos?: IEnlaceExterno[]; 
   telefono?: string;            
   ubicacion?: IUbicacion; // Ubicación del evento
@@ -108,6 +109,7 @@ export interface IPublicacionUpdate {
   precioNegociable?: boolean;
   precioEstudiante?: number;
   precioCiudadanoOro?: number;
+  descuento?: number; // Porcentaje de descuento (0-100)
   enlacesExternos?: IEnlaceExterno[];
   telefono?: string;
   ubicacion?: IUbicacion; // Ubicación del evento para actualización

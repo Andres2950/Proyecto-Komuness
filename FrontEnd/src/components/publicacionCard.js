@@ -211,6 +211,15 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
             </div>
           )}
 
+          {/* Chip de descuento/promoción */}
+          {publicacion.descuento && publicacion.descuento > 0 && (
+            <div className={`absolute ${mostrarPrecio || precioNegociable ? "top-12" : "top-2"} left-2 z-10`}>
+              <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-semibold shadow md:px-2 md:py-1 md:text-xs">
+                🔥 {publicacion.descuento}% OFF
+              </span>
+            </div>
+          )}
+
           {/* Espacio de imagen para publicaciones NO 'publicacion' */}
           {!esPublicacion && (
             <div className="imagen h-48 bg-gray-200 flex items-center justify-center">
