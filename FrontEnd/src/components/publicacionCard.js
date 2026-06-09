@@ -323,12 +323,7 @@ export const PublicacionCard = ({ publicacion, onDeleteClick }) => {
                     <p className="tweet-date text-sm">
                      Fecha: {formatFecha(publicacion.fecha)}
                     </p>
-                  </div>      
                   </div>
-                  <p className="tweet-date text-sm text-gray-600">
-                    Fecha: {formatFecha(publicacion.fecha)}
-                  </p>
-                </div>
               </div>
             )}
             {etiquetaExpiracion && (
