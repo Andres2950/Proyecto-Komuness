@@ -5,8 +5,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background-color: #ffbf30;
-    color: black;
+    background-color: var(--theme-navbar-bg);
+    color: var(--theme-navbar-text);
     box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.5);
     position: relative;
     z-index: 1000;
@@ -28,7 +28,7 @@
     border: none;
     font-size: 1.8rem;
     cursor: pointer;
-    color: black;
+    color: var(--theme-navbar-text);
     padding: 0.5rem;
     z-index: 1001;
     transition: transform 0.2s ease;
@@ -56,12 +56,12 @@
 }
 
 .menu li.activo {
-    background-color: #e5a800;
-    color: white;
+    background-color: var(--theme-navbar-active-bg);
+    color: var(--theme-navbar-active-text);
 }
 
 .menu li.activo:hover {
-    background-color: #cc9500;
+    filter: brightness(0.9);
 }
 
 .navbar span{
@@ -71,7 +71,7 @@
 }
 
 .menu li.activo span {
-    color: white;
+    color: var(--theme-navbar-active-text);
     font-weight: 600;
 }
 
@@ -101,7 +101,7 @@
     font-weight: 700;
     line-height: 18px;
     text-align: center;
-    box-shadow: 0 0 0 2px #ffbf30;
+    box-shadow: 0 0 0 2px var(--theme-navbar-bg);
     pointer-events: none;
 }
 
@@ -110,7 +110,7 @@
 }
 
 .menu li.activo svg {
-    color: white;
+    color: var(--theme-navbar-active-text);
 }
 
 .user-icon{
@@ -163,7 +163,7 @@
         right: -100%;
         width: 280px;
         height: 100vh;
-        background-color: #ffbf30;
+        background-color: var(--theme-navbar-bg);
         flex-direction: column;
         justify-content: flex-start;
         padding-top: 80px;
