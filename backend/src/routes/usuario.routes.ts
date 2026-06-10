@@ -10,7 +10,8 @@ import {
   actualizarLimiteUsuario,
   actualizarVencimientoPremium,
   actualizarMembresiaUsuarioAdmin,
-  activarPremiumActual
+  activarPremiumActual,
+  getTagsByUser
 } from "../controllers/usuario.controller";
 import {
   loginUsuario,
@@ -40,6 +41,8 @@ router.post("/", authMiddleware, verificarRoles([0]), createUsuario);
 router.get("/", authMiddleware, verificarRoles([0, 1]), getUsuarios);
 
 router.get("/:id", authMiddleware, verificarRoles([0]), getUsuarioById);
+router.get("/:id/etiquetas", authMiddleware, getTagsByUser);
+
 router.delete("/:id", authMiddleware, verificarRoles([0]), deleteUsuario);
 
 // Endpoints para administradores: gestion de limites y premium

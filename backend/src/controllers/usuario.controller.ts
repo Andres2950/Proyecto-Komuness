@@ -93,6 +93,39 @@ export const getUsuarioById = async (req: Request, res: Response): Promise<void>
     }
 };
 
+// Controlador para obtener etiquetas
+export const getTagsByUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const id = req.params.id;
+        // INCLUIR plan en la consulta
+        const usuario = await modelUsuario.findById(id)
+            .select("encuestaInicio.etiquetas")
+            .populate("encuestaInicio.etiquetas")
+            .lean();
+
+        const etiquetas = usuario?.encuestaInicio?.etiquetas ?? [];
+        
+        if (!usuario) {
+            res.status(404).json({ 
+                success: false, 
+                message: 'Usuario no encontrado' 
+            });
+            return;
+        }
+
+        res.status(200).json({
+            message: "Etiquetas obtenidas correctamente",
+            data: etiquetas
+        });
+    } catch (error) {
+        const err = error as Error;
+        res.status(500).json({ 
+            success: false, 
+            message: err.message 
+        });
+    }
+};
+
 // Controlador para actualizar un usuario
 export const updateUsuario = async (req: Request, res: Response): Promise<void> => {
     try {

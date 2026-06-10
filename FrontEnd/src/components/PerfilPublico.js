@@ -16,6 +16,7 @@ const PerfilPublico = () => {
   const modo = searchParams.get('modo') || 'completo';
   
   const [perfil, setPerfil] = useState(null);
+  const [etiquetas, setEtiquetas] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true); 
@@ -43,6 +44,19 @@ const PerfilPublico = () => {
 
       const data = await response.json();
       setPerfil(data.data);
+
+      //Obtener etiquetas
+      const responseTags = await fetch(
+        `${API_URL}/usuario/${id}/etiquetas`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const dataTags = await responseTags.json();
+      setEtiquetas(dataTags.data);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -151,16 +165,17 @@ const PerfilPublico = () => {
         </div>
       </header>
 
-      {/* Habilidades Destacadas */}
-      {perfil.habilidades && perfil.habilidades.length > 0 && (
+      {/* Etiquetas */}
+      
+      {etiquetas && etiquetas.length > 0 && (
         <section className="skills-showcase">
           <div className="skills-container">
-            {perfil.habilidades.slice(0, 4).map((habilidad, index) => (
+            {etiquetas.slice(0, 4).map((etiqueta, index) => (
               <div 
                 key={index} 
                 className={`skill-badge skill-${index + 1}`}
               >
-                <span className="skill-name">{habilidad}</span>
+                <span className="skill-name">{etiqueta.nombre}</span>
               </div>
             ))}
           </div>
