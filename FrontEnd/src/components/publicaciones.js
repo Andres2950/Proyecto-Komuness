@@ -19,7 +19,6 @@ import LimitePublicaciones from "./limiteDePublicaciones";
 import PublicidadModal from "./publicidadModal";
 import DateFilter from "./generic/dateFilter";
 import PriceFilter from "./generic/priceFilter";
-import { buildPreferenceFilters } from "../utils/onboardingSurvey";
 
 // Base de API robusta (evita /api/api)
 const RAW = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -51,10 +50,6 @@ export const Publicaciones = ({ tag: propTag }) => {
 
   const isSearch = searchParams.get("search") === "true";
   const searchFilter = isSearch ? searchTerm : null;
-  const hasManualFilters = Boolean(
-    categoriaFilter || searchFilter || fechaFilter || precioMin || precioMax,
-  );
-  const preferenceFilters = buildPreferenceFilters(user, { hasManualFilters });
   const [limiteData, setLimiteData] = useState(null);
   const [selectedPub, setSelectedPub] = useState(null);
 
@@ -120,7 +115,6 @@ export const Publicaciones = ({ tag: propTag }) => {
         fecha: fechaFilter,
         precioMin: precioMin,
         precioMax: precioMax,
-        ...preferenceFilters,
       });
   }, [tag, categoriaFilter, searchFilter, fechaFilter, precioMin, precioMax, user]);
 
@@ -341,7 +335,6 @@ export const Publicaciones = ({ tag: propTag }) => {
       fecha: fechaFilter,
       precioMin: precioMin,
       precioMax: precioMax,
-      ...preferenceFilters,
     });
   };
 
