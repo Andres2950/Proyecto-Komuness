@@ -8,9 +8,10 @@ import { useAuth } from "./context/AuthContext";
 import ModalCambioContrasena from "./modalCambioContra";
 import { Link } from "react-router-dom";
 import { FaListAlt, FaEdit, FaHistory } from "react-icons/fa";
-import { FiSettings, FiCreditCard } from "react-icons/fi";
+import { FiSettings, FiCreditCard, FiDroplet } from "react-icons/fi";
 import ModalLimitesPublicaciones from "./modalLimitesPublicaciones";
 import ModalConfiguracionPagos from "./ModalConfiguracionPagos";
+import ModalConfiguracionTematica from "./ModalConfiguracionTematica";
 import AlertaLimitePublicaciones from "./AlertaLimitePublicaciones";
 import LimitePublicaciones from "./limiteDePublicaciones";
 
@@ -24,6 +25,7 @@ export const PerfilUsuario = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalLimitesAbierto, setModalLimitesAbierto] = useState(false);
   const [modalPagosAbierto, setModalPagosAbierto] = useState(false);
+  const [modalTematicaAbierto, setModalTematicaAbierto] = useState(false);
   const [modalPremiumAbierto, setModalPremiumAbierto] = useState(false);
   const [activeTab, setActiveTab] = useState("publicaciones");
   const [limiteData, setLimiteData] = useState(null);
@@ -1183,6 +1185,10 @@ export const PerfilUsuario = () => {
         isOpen={modalPagosAbierto}
         onClose={() => setModalPagosAbierto(false)}
       />
+      <ModalConfiguracionTematica
+        isOpen={modalTematicaAbierto}
+        onClose={() => setModalTematicaAbierto(false)}
+      />
 
       {user && (user.tipoUsuario === 0 || user.tipoUsuario === 1) && (
         <div className="w-full md:w-2/3 flex flex-col gap-6 bg-gray-50 rounded-xl p-4 md:p-6 dashboard-scroll-container">
@@ -1216,6 +1222,14 @@ export const PerfilUsuario = () => {
               >
                 <FiCreditCard className="w-4 h-4 mr-2" />
                 Configurar Pagos
+              </button>
+
+              <button
+                onClick={() => setModalTematicaAbierto(true)}
+                className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 font-medium text-sm"
+              >
+                <FiDroplet className="w-4 h-4 mr-2" />
+                Configurar Temática
               </button>
             </div>
           )}
