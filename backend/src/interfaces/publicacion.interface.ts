@@ -1,5 +1,12 @@
 import { Document, Types } from "mongoose";
 
+export interface IPublicacionNotification {
+  autor: string;
+  contenidoBreve: string;
+  publicacionId: string;
+  categoriaId: string;
+}
+
 export interface IPublicacion {
   _id?: string;
   titulo: string;

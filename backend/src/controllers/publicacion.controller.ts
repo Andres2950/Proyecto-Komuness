@@ -1,7 +1,7 @@
 // src/controllers/publicacion.controller.ts
 
 import { Request, Response } from "express";
-import {
+import { IPublicacionNotification,
   IAdjunto,
   IComentario,
   IEnlaceExterno,
@@ -26,6 +26,7 @@ import { modelPerfil } from "../models/perfil.model";
 import {
   createComentarioPublicacionNotificacion,
   createRespuestaComentarioNotificacion,
+  notificarNuevaPublicacion,
 } from "../services/notificacion.service";
 
 const LOG_ON = process.env.LOG_PUBLICACION === "1";
@@ -410,6 +411,12 @@ export const createPublicacionA = async (
 ): Promise<void> => {
   try {
     const publicacion = req.body as IPublicacion & Record<string, any>;
+    const user = req.user;
+
+    if (!user) {
+      res.status(401).json({ message: "No autorizado" });
+      return;
+    }
 
     // 🔴 Autor siempre desde el token
     const userId = (req as any).user?._id;
@@ -716,7 +723,9 @@ export const updatePublicacion = async (
     const updatedData: Partial<IPublicacion> & Record<string, any> = {
       ...req.body,
     };
-    const publicacionActual = await modelPublicacion.findById(id);
+    const publicacionActual = await modelPublicacion
+      .findById(id)
+      .populate("autor", "nombre apellido");
 
     if (!publicacionActual) {
       res.status(404).json({ message: "Publicacion no encontrada" });
@@ -811,6 +820,23 @@ export const updatePublicacion = async (
       res.status(404).json({ message: "Publicación no encontrada" });
       return;
     }
+
+    //Notificación a usuarios suscritos a categoría
+    const autor = publicacionActual.autor as any;
+    if(!publicacionActual.publicado && updatedData.publicado === true){
+      const nombreAutor = [autor.nombre, autor.apellido].filter(Boolean).join(" ").trim();
+      try {
+        await notificarNuevaPublicacion({
+          autor: nombreAutor,
+          contenidoBreve: publicacionActual.contenidoBreve,
+          publicacionId: id,
+          categoriaId: publicacionActual.categoria.toString()
+        });
+      } catch (notificacionError) {
+        console.warn('No se pudo crear notificación de publicación', notificacionError);
+      }
+    }
+    
 
     res.status(200).json(publicacion);
   } catch (error) {
