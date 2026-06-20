@@ -4,6 +4,7 @@ import { modelUsuario } from '../models/usuario.model';
 import { generarToken, verificarToken } from '../utils/jwt';
 import { hashPassword, comparePassword } from '../utils/bcryptjs';
 import { createTransport } from 'nodemailer';
+import { normalizeEncuestaInicio } from '../utils/encuestaInicio';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -61,6 +62,23 @@ export const getUsuarios = async (req: Request, res: Response): Promise<void> =>
     }
 };
 
+// Controlador para obtener todos los usuarios
+export const getPublicUsuarios = async (req: Request, res: Response): Promise<void> => {
+
+    try {
+        const usuarios = await modelUsuario.find().select('nombre apellido');
+
+        res.status(200).json({
+            success: true,
+            data: usuarios
+        });
+    } catch (error) {
+        const err = error as Error;
+        
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 // Controlador para obtener un usuario por su id
 export const getUsuarioById = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -92,6 +110,39 @@ export const getUsuarioById = async (req: Request, res: Response): Promise<void>
     }
 };
 
+// Controlador para obtener etiquetas
+export const getTagsByUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const id = req.params.id;
+        // INCLUIR plan en la consulta
+        const usuario = await modelUsuario.findById(id)
+            .select("encuestaInicio.etiquetas")
+            .populate("encuestaInicio.etiquetas")
+            .lean();
+
+        const etiquetas = usuario?.encuestaInicio?.etiquetas ?? [];
+        
+        if (!usuario) {
+            res.status(404).json({ 
+                success: false, 
+                message: 'Usuario no encontrado' 
+            });
+            return;
+        }
+
+        res.status(200).json({
+            message: "Etiquetas obtenidas correctamente",
+            data: etiquetas
+        });
+    } catch (error) {
+        const err = error as Error;
+        res.status(500).json({ 
+            success: false, 
+            message: err.message 
+        });
+    }
+};
+
 // Controlador para actualizar un usuario
 export const updateUsuario = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -102,7 +153,10 @@ export const updateUsuario = async (req: Request, res: Response): Promise<void> 
         if (usuario.password) {
             usuario.password = await hashPassword(usuario.password);
         }
-        const user = await modelUsuario.findByIdAndUpdate(id, usuario, { new: true });
+        if ((req.body as any).encuestaInicio !== undefined) {
+            (usuario as any).encuestaInicio = normalizeEncuestaInicio((req.body as any).encuestaInicio);
+        }
+        const user = await modelUsuario.findByIdAndUpdate(id, usuario, { new: true }).select('-password');
         res.status(200).json(user);
     } catch (error) {
         const err = error as Error;

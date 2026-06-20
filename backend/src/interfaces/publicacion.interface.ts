@@ -1,5 +1,12 @@
 import { Document, Types } from "mongoose";
 
+export interface IPublicacionNotification {
+  autor: string;
+  contenidoBreve: string;
+  publicacionId: string;
+  categoriaId: string;
+}
+
 export interface IPublicacion {
   _id?: string;
   titulo: string;
@@ -19,6 +26,7 @@ export interface IPublicacion {
   precioNegociable?: boolean;
   precioEstudiante?: number;     
   precioCiudadanoOro?: number;   
+  descuento?: number; // Porcentaje de descuento (0-100)
   enlacesExternos?: IEnlaceExterno[]; 
   telefono?: string;            
   ubicacion?: IUbicacion; // Ubicación del evento
@@ -108,6 +116,7 @@ export interface IPublicacionUpdate {
   precioNegociable?: boolean;
   precioEstudiante?: number;
   precioCiudadanoOro?: number;
+  descuento?: number; // Porcentaje de descuento (0-100)
   enlacesExternos?: IEnlaceExterno[];
   telefono?: string;
   ubicacion?: IUbicacion; // Ubicación del evento para actualización

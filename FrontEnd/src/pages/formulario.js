@@ -2,16 +2,18 @@ import { useState, useEffect } from "react";
 import { IoMdClose, IoMdRemove, IoMdAdd } from "react-icons/io";
 import { API_URL } from "../utils/api";
 import { toast } from "react-hot-toast";
-import CategoriaSelector from '../components/categoriaSelector';
+import CategoriaSelector from '../components/generic/categoriaSelector';
 import AlertaLimitePublicaciones from '../components/AlertaLimitePublicaciones';
 import '../CSS/formularioPublicacion.css';
 import MapaUbicacion from '../components/MapaUbicacion';
 import TextAreaComponent from '../components/TextAreaComponent';
+import ConfirmDialog from "../components/ConfirmDialog";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useConfirmDialog } from "../hooks/useConfirmDialog";
 import {
   readSessionDraft,
   removeSessionDraft,
-  writeSessionDraft
+  writeSessionDraft,
 } from "../utils/sessionDraftStorage";
 
 const CREATE_DRAFT_PREFIX = "komuness:crear-publicacion";
@@ -20,12 +22,13 @@ const DEFAULT_UBICACION = {
   latitude: 9.7489,
   longitude: -83.7534,
   direccion: "San José, Costa Rica",
-  mapLink: 'https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534'
+  mapLink:
+    "https://www.openstreetmap.org/?mlat=9.7489&mlon=-83.7534#map=16/9.7489/-83.7534",
 };
 
 const createDefaultUbicacion = () => ({ ...DEFAULT_UBICACION });
 
-const createDefaultEnlaces = () => [{ nombre: '', url: '' }];
+const createDefaultEnlaces = () => [{ nombre: "", url: "" }];
 
 const getCreateDraftStorageKey = (tag) =>
   `${CREATE_DRAFT_PREFIX}:${tag || "general"}`;
@@ -47,6 +50,7 @@ const getInitialFormValues = (tag) => ({
   precioNegociable: false,
   precioEstudiante: "",
   precioCiudadanoOro: "",
+  descuento: "",
   telefono: "",
   categoria: "",
 });
@@ -60,9 +64,11 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
   const [enlacesExternos, setEnlacesExternos] = useState(createDefaultEnlaces);
   const [ubicacion, setUbicacion] = useState(createDefaultUbicacion);
+  const { dialog, confirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   const [formData, setFormData] = useState(() => getInitialFormValues(openTag));
   const [draftCargado, setDraftCargado] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
   const draftStorageKey = getCreateDraftStorageKey(openTag);
 
   useLockBodyScroll(isOpen);
@@ -70,55 +76,90 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
   useEffect(() => {
     if (!isOpen) {
       setDraftCargado(false);
+      setHasChanges(false);
       return;
     }
 
-    setDraftCargado(false);
-    const initialFormValues = getInitialFormValues(openTag);
-    const savedDraft = readSessionDraft(draftStorageKey);
+    let isActive = true;
 
-    if (savedDraft) {
-      setFormData({
-        ...initialFormValues,
-        ...(savedDraft.formData || {}),
-        archivos: [],
-      });
-      setEnlacesExternos(
-        Array.isArray(savedDraft.enlacesExternos) && savedDraft.enlacesExternos.length > 0
-          ? savedDraft.enlacesExternos
-          : createDefaultEnlaces()
-      );
-      setUbicacion({
-        ...createDefaultUbicacion(),
-        ...(savedDraft.ubicacion || {}),
-      });
-    } else {
-      setFormData(initialFormValues);
-      setEnlacesExternos(createDefaultEnlaces());
-      setUbicacion(createDefaultUbicacion());
-    }
+    const loadDraft = async () => {
+      setDraftCargado(false);
+      const initialFormValues = getInitialFormValues(openTag);
+      const savedDraft = readSessionDraft(draftStorageKey);
 
-    setDraftCargado(true);
-  }, [isOpen, openTag, draftStorageKey]);
+      if (savedDraft) {
+        const shouldLoadDraft = await confirm({
+          title: "Borrador encontrado",
+          message: "Hay un borrador guardado de esta publicación.",
+          hint: "Puedes cargarlo para continuar o descartarlo.",
+          confirmText: "Cargar borrador",
+          cancelText: "Descartar",
+        });
+
+        if (!isActive) return;
+
+        if (shouldLoadDraft) {
+          setFormData({
+            ...initialFormValues,
+            ...(savedDraft.formData || {}),
+            archivos: [],
+          });
+          setEnlacesExternos(
+            Array.isArray(savedDraft.enlacesExternos) &&
+              savedDraft.enlacesExternos.length > 0
+              ? savedDraft.enlacesExternos
+              : createDefaultEnlaces(),
+          );
+          setUbicacion({
+            ...createDefaultUbicacion(),
+            ...(savedDraft.ubicacion || {}),
+          });
+          setHasChanges(true);
+        } else {
+          removeSessionDraft(draftStorageKey);
+          setFormData(initialFormValues);
+          setEnlacesExternos(createDefaultEnlaces());
+          setUbicacion(createDefaultUbicacion());
+          setHasChanges(false);
+        }
+      } else {
+        setFormData(initialFormValues);
+        setEnlacesExternos(createDefaultEnlaces());
+        setUbicacion(createDefaultUbicacion());
+        setHasChanges(false);
+      }
+
+      if (!isActive) return;
+      setDraftCargado(true);
+    };
+
+    loadDraft();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isOpen, openTag, draftStorageKey, confirm]);
 
   useEffect(() => {
-    if (!isOpen || !draftCargado) return;
+    if (!isOpen || !draftCargado || !hasChanges) return;
 
     writeSessionDraft(draftStorageKey, {
       formData: getPersistedFormData(formData),
       enlacesExternos,
       ubicacion,
     });
-  }, [isOpen, draftCargado, draftStorageKey, formData, enlacesExternos, ubicacion]);
+  }, [isOpen, draftCargado, draftStorageKey, formData, enlacesExternos, ubicacion, hasChanges]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const normalizedValue = type === "checkbox" ? checked : value;
+    setHasChanges(true);
     setFormData((prev) => ({ ...prev, [name]: normalizedValue }));
   };
 
   const handlePrecioNegociableChange = (e) => {
     const checked = e.target.checked;
+    setHasChanges(true);
     setFormData((prev) => ({
       ...prev,
       precioNegociable: checked,
@@ -134,10 +175,14 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setHasChanges(true);
+    }
     setFormData((prev) => ({ ...prev, archivos: [...prev.archivos, ...files] }));
   };
 
   const handleRemoveImage = (index) => {
+    setHasChanges(true);
     setFormData((prev) => ({
       ...prev,
       archivos: prev.archivos.filter((_, i) => i !== index),
@@ -148,23 +193,57 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
   const handleEnlaceChange = (index, field, value) => {
     const updatedEnlaces = [...enlacesExternos];
     updatedEnlaces[index][field] = value;
+    setHasChanges(true);
     setEnlacesExternos(updatedEnlaces);
   };
 
   const addEnlace = () => {
+    setHasChanges(true);
     setEnlacesExternos([...enlacesExternos, { nombre: '', url: '' }]);
   };
 
   const removeEnlace = (index) => {
     if (enlacesExternos.length > 1) {
+      setHasChanges(true);
       setEnlacesExternos(enlacesExternos.filter((_, i) => i !== index));
     }
   };
 
+  const handleUbicacionChange = (nuevaUbicacion) => {
+    setHasChanges(true);
+    setUbicacion(nuevaUbicacion);
+  };
+
+  const handleClose = async () => {
+    if (hasChanges) {
+      const shouldSave = await confirm({
+        title: "Guardar borrador",
+        message: "Deseas guardar lo escrito para continuar después?",
+        hint: "Si descartas, se eliminará el borrador guardado.",
+        confirmText: "Guardar",
+        cancelText: "Descartar",
+      });
+
+      if (shouldSave) {
+        writeSessionDraft(draftStorageKey, {
+          formData: getPersistedFormData(formData),
+          enlacesExternos,
+          ubicacion,
+        });
+      } else {
+        removeSessionDraft(draftStorageKey);
+      }
+    } else {
+      removeSessionDraft(draftStorageKey);
+    }
+
+    onClose?.();
+  };
+
     // Filtrar enlaces válidos (con nombre y URL)
   const enlacesValidos = enlacesExternos.filter(
-      enlace => enlace.nombre.trim() !== '' && enlace.url.trim() !== ''
-    );
+    (enlace) => enlace.nombre.trim() !== "" && enlace.url.trim() !== "",
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -183,15 +262,16 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     data.append("precioNegociable", String(formData.precioNegociable));
     data.append("precioEstudiante", formData.precioEstudiante || "");
     data.append("precioCiudadanoOro", formData.precioCiudadanoOro || "");
+    data.append("descuento", formData.descuento || "0");
     data.append("telefono", formData.telefono || "");
     data.append("categoria", formData.categoria || "");
-    
+
     // Agregar ubicación como JSON si es un evento
     if (formData.tag === "evento" && ubicacion) {
       data.append("ubicacion", JSON.stringify(ubicacion));
     }
 
-      // Agregar enlaces externos como JSON
+    // Agregar enlaces externos como JSON
     if (enlacesValidos.length > 0) {
       data.append("enlacesExternos", JSON.stringify(enlacesValidos));
     }
@@ -235,37 +315,42 @@ export const FormularioPublicacion = ({ isOpen, onClose, openTag }) => {
     }
 
     if (!response.ok) {
-      const error = new Error(result?.message || result?.mensaje || "Error al enviar publicación.");
+      const error = new Error(
+        result?.message || result?.mensaje || "Error al enviar publicación.",
+      );
       error.status = response.status;
-      
+
       // Si es error 403, lanzarlo sin mostrar toast
       if (response.status === 403) {
         throw error;
       }
-      
+
       // Para otros errores, mostrar toast
       toast.error(error.message);
       throw error;
     }
 
     // Si fue exitoso, mostrar toast de éxito
-    toast.success("Publicación enviada con éxito, solicita a un administrador que la publique 🎉", {
-      duration: 8000,
-    });
-    
+    toast.success(
+      "Publicación enviada con éxito, solicita a un administrador que la publique 🎉",
+      {
+        duration: 8000,
+      },
+    );
+
     return result;
   };
 
   if (!isOpen) return null;
 
-return (
+  return (
     <>
       <div className="formulario-publicacion-container">
         <div className="formulario-publicacion">
           <form onSubmit={handleSubmit} className="formulario-grid">
             {/* Header móvil */}
             <div className="formulario-mobile-header">
-              <button type="button" onClick={onClose} className="text-gray-600 text-2xl font-bold">
+              <button type="button" onClick={handleClose} className="text-gray-600 text-2xl font-bold">
                 <IoMdClose size={35} />
               </button>
               <button type="submit" className="boton-mobile">
@@ -285,7 +370,9 @@ return (
                 className="campo-input"
                 required
               />
-              <p className="texto-contador">{formData.titulo.length}/100 caracteres</p>
+              <p className="texto-contador">
+                {formData.titulo.length}/100 caracteres
+              </p>
             </div>
 
             {/* Tag */}
@@ -308,7 +395,7 @@ return (
             {/* Clasificación */}
             <div className="campo-grupo">
               <label className="campo-label">Clasificación:</label>
-              <CategoriaSelector 
+              <CategoriaSelector
                 selectedCategoria={formData.categoria}
                 onCategoriaChange={handleChange}
                 required={true}
@@ -328,7 +415,7 @@ return (
                 required
               />
             </div>
-	    {/* Descripción corta*/}
+            {/* Descripción corta*/}
             <div className="campo-grupo">
               <label className="campo-label">Descripción breve:</label>
               <TextAreaComponent
@@ -337,14 +424,15 @@ return (
                 onChange={handleChange}
                 className="campo-textarea small"
                 placeholder={`Descripción breve`}
-		limit={100}
+                limit={100}
                 rows={2}
                 required
               />
             </div>
 
             {/* Precios para eventos y emprendimientos */}
-            {(formData.tag === "evento" || formData.tag === "emprendimiento") && (
+            {(formData.tag === "evento" ||
+              formData.tag === "emprendimiento") && (
               <div className="precios-seccion">
                 <h3 className="precios-titulo">Precios</h3>
 
@@ -359,16 +447,20 @@ return (
                         onChange={handlePrecioNegociableChange}
                         className="precio-negociable-checkbox"
                       />
-                      <label htmlFor="precioNegociableCrear" className="precio-negociable-label">
+                      <label
+                        htmlFor="precioNegociableCrear"
+                        className="precio-negociable-label"
+                      >
                         Precio negociable
                       </label>
                     </div>
                     <p className="precio-negociable-help">
-                      Si activas esta opción, no se mostrará un precio fijo en el emprendimiento.
+                      Si activas esta opción, no se mostrará un precio fijo en
+                      el emprendimiento.
                     </p>
                   </div>
                 )}
-                
+
                 {(formData.tag === "evento" || !formData.precioNegociable) && (
                   <>
                     <div className="campo-grupo">
@@ -401,7 +493,9 @@ return (
 
                     {/* Precio Estudiante */}
                     <div className="campo-grupo">
-                      <label className="campo-label">Precio estudiante (opcional):</label>
+                      <label className="campo-label">
+                        Precio estudiante (opcional):
+                      </label>
                       <input
                         type="number"
                         name="precioEstudiante"
@@ -414,7 +508,9 @@ return (
 
                     {/* Precio Ciudadano de Oro */}
                     <div className="campo-grupo">
-                      <label className="campo-label">Precio ciudadano de oro (opcional):</label>
+                      <label className="campo-label">
+                        Precio ciudadano de oro (opcional):
+                      </label>
                       <input
                         type="number"
                         name="precioCiudadanoOro"
@@ -424,15 +520,39 @@ return (
                         placeholder="Ej: 7000"
                       />
                     </div>
+
+                    {/* Descuento */}
+                    <div className="campo-grupo">
+                      <label className="campo-label">
+                        Descuento (% - opcional):
+                      </label>
+                      <input
+                        type="number"
+                        name="descuento"
+                        value={formData.descuento}
+                        onChange={handleChange}
+                        className="campo-input"
+                        placeholder="Ej: 15 (para 15%)"
+                        min="0"
+                        max="100"
+                      />
+                      {formData.descuento && (
+                        <p className="texto-ayuda">
+                          Descuento: {formData.descuento}%
+                        </p>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
             )}
 
             {/* Teléfono */}
-        
+
             <div className="campo-grupo">
-              <label className="campo-label">Teléfono de contacto (opcional):</label>
+              <label className="campo-label">
+                Teléfono de contacto (opcional):
+              </label>
               <input
                 type="tel"
                 name="telefono"
@@ -450,13 +570,17 @@ return (
                 }}
               />
               {formData.telefono && !/^\d+$/.test(formData.telefono) && (
-                <p className="texto-error">El teléfono debe contener solo números</p>
+                <p className="texto-error">
+                  El teléfono debe contener solo números
+                </p>
               )}
             </div>
 
             {/* Enlaces externos */}
             <div className="enlaces-seccion">
-              <label className="campo-label">Enlaces externos (opcional):</label>
+              <label className="campo-label">
+                Enlaces externos (opcional):
+              </label>
               <p className="texto-ayuda">
                 Puedes agregar: URLs, correos, enlaces de WhatsApp, etc.
               </p>
@@ -466,14 +590,18 @@ return (
                     type="text"
                     placeholder="Ej: Facebook, Correo, WhatsApp"
                     value={enlace.nombre}
-                    onChange={(e) => handleEnlaceChange(index, 'nombre', e.target.value)}
+                    onChange={(e) =>
+                      handleEnlaceChange(index, "nombre", e.target.value)
+                    }
                     className="campo-input enlace-input"
                   />
                   <input
                     type="text"
                     placeholder="https://..., correo@gmail.com,"
                     value={enlace.url}
-                    onChange={(e) => handleEnlaceChange(index, 'url', e.target.value)}
+                    onChange={(e) =>
+                      handleEnlaceChange(index, "url", e.target.value)
+                    }
                     className="campo-input enlace-input"
                   />
                   <button
@@ -562,9 +690,9 @@ return (
                 </div>
 
                 {/* Mapa para seleccionar ubicación del evento */}
-                <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ gridColumn: "1 / -1" }}>
                   <MapaUbicacion
-                    onLocationSelect={setUbicacion}
+                    onLocationSelect={handleUbicacionChange}
                     initialLocation={ubicacion}
                   />
                 </div>
@@ -573,7 +701,7 @@ return (
 
             {/* Botones desktop */}
             <div className="botones-desktop">
-              <button type="button" onClick={onClose} className="boton-volver">
+              <button type="button" onClick={handleClose} className="boton-volver">
                 Volver
               </button>
               <button type="submit" className="boton-publicar">
@@ -585,9 +713,15 @@ return (
       </div>
 
       {/* Alerta de límite de publicaciones */}
-      <AlertaLimitePublicaciones 
-        show={mostrarAlerta} 
-        onClose={() => setMostrarAlerta(false)} 
+      <AlertaLimitePublicaciones
+        show={mostrarAlerta}
+        onClose={() => setMostrarAlerta(false)}
+      />
+
+      <ConfirmDialog
+        dialog={dialog}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
       />
     </>
   );
